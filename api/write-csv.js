@@ -11,8 +11,11 @@ export default async function handler(req, res) {
   const octokit = new Octokit({ auth: TOKEN });
 
   try {
-    const { name, value } = JSON.parse(req.body);
-    const newRow = `\n${name},${value}`;
+    const { firstName, lastName } = JSON.parse(req.body);
+    
+    // בניית שורה של 20 עמודות לפי המבנה שלך:
+    // שם פרטי, שם משפחה, השאר ריק (18 פסיקים נוספים)
+    const newRow = `\n${firstName},${lastName},,,,,,,,,,,,,,,,,,`;
 
     // 1. קבלת תוכן הקובץ הקיים
     const { data: fileData } = await octokit.repos.getContent({
@@ -21,7 +24,7 @@ export default async function handler(req, res) {
       path: FILE_PATH,
     });
 
-    const content = Buffer.from(fileData.content, 'base64').toString();
+    const content = Buffer.from(fileData.content, 'base64').toString('utf-8');
     const updatedContent = content + newRow;
 
     // 2. עדכון הקובץ בגיטהאב
@@ -29,8 +32,8 @@ export default async function handler(req, res) {
       owner: REPO_OWNER,
       repo: REPO_NAME,
       path: FILE_PATH,
-      message: 'עדכון נתונים מהאתר',
-      content: Buffer.from(updatedContent).toString('base64'),
+      message: `הוספת ${firstName} ${lastName} למאגר`,
+      content: Buffer.from(updatedContent, 'utf-8').toString('base64'),
       sha: fileData.sha,
     });
 
