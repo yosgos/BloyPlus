@@ -3,7 +3,6 @@ import { Octokit } from "@octokit/rest";
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-  // כאן אתה מגדיר לאיזה קובץ לכתוב - שנה את filename.csv לשם הקובץ שלך
   const FILE_PATH = 'Master.csv'; 
   const REPO_NAME = process.env.VERCEL_GIT_REPO_SLUG;
   const REPO_OWNER = process.env.VERCEL_GIT_REPO_OWNER;
