@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>הוספת חבר משפחה</title>
+    <style>
+        /* עיצוב רקע דינמי ויוקרתי */
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* קופסת הטופס בעיצוב זכוכית (Glassmorphism) */
+        .form-box {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 16px;
+            width: 350px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+        h2 { text-align: center; margin-bottom: 20px; font-weight: 400; }
+        label { font-size: 14px; color: #ccc; }
+        /* עיצוב שדות הקלט */
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0 16px 0;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            box-sizing: border-box;
+        }
+        input:focus { outline: none; border-color: #4ed17d; }
+        /* כפתור שליחה ירוק בולט */
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4ed17d;
+            border: none;
+            border-radius: 6px;
+            color: #0f2027;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover { background: #3db86b; transform: translateY(-1px); }
+        button:disabled { background: #555; cursor: not-allowed; }
+        #statusMessage { text-align: center; margin-top: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="form-box">
+    <h2>הוספת חבר משפחה</h2>
+    <form id="familyForm">
+        <label>שם פרטי *</label>
+        <input type="text" id="first_name" required>
+
+        <label>שם משפחה *</label>
+        <input type="text" id="last_name" required>
+
+        <label>מספר מזהה (ID) *</label>
+        <input type="text" id="id" placeholder="למשל 0501" required>
+
+        <button type="submit" id="submitBtn">שמור ב-Neon</button>
+    </form>
+    <div id="statusMessage"></div>
+</div>
+
+<script>
+    document.getElementById('familyForm').onsubmit = async (e) => {
+        e.preventDefault(); // מונע מהדף להתרענן באופן אוטומטי
+        
+        const btn = document.getElementById('submitBtn');
+        const status = document.getElementById('statusMessage');
+        
+        // נועלים את הכפתור כדי למנוע לחיצות כפולות בזמן השליחה
+        btn.disabled = true;
+        btn.innerText = 'שומר נתונים...';
+        status.innerText = '';
+
+        // אוספים אך ורק את שלושת הערכים מהשדות
+        const payload = {
+            first_name: document.getElementById('first_name').value,
+            last_name: document.getElementById('last_name').value,
+            id: document.getElementById('member_id').value
+        };
+
+        try {
+            // שולחים את המידע לקוד השרת (API) ב-Vercel
+            const response = await fetch('/api/add-member', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                status.style.color = '#4ed17d';
+                status.innerText = result.message;
+                document.getElementById('familyForm').reset(); // מנקה את הטופס מהטקסט שהוקלד
+            } else {
+                status.style.color = '#ff6b6b';
+                status.innerText = result.error || 'חלה שגיאה בשמירה';
+            }
+        } catch (err) {
+            status.style.color = '#ff6b6b';
+            status.innerText = 'שגיאת תקשורת עם השרת';
+        } finally {
+            // משחררים את הנעילה של הכפתור
+            btn.disabled = false;
+            btn.innerText = 'שמור ב-Neon';
+        }
+    };
+</script>
+
+</body>
+</html>
