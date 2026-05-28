@@ -61,10 +61,12 @@ export default async function handler(req, res) {
       FROM family_members 
       WHERE id LIKE $1 
         AND id NOT LIKE '%1'
+        AND split_part(id, '.', $2) != '00'
     `;
-    const countResult = await client.query(countQuery, [prefix + '%']);
-    const childCount = parseInt(countResult.rows[0].child_count); // למשל: 4
-
+   // אנחנו מעבירים גם את ה-replaceIndex + 1 כדי שה-split_part ידע באיזה מקטע לבדוק את ה-00
+    const countResult = await client.query(countQuery, [prefix + '%', replaceIndex + 1]);
+    const childCount = parseInt(countResult.rows[0].child_count); // עכשיו זה יחזיר בדיוק 4!
+    
     // שלב 4: חישוב המספר החדש והפיכתו ל-2 ספרות (סך הילדים + 1)
     const nextChildNumber = childCount + 1;
     const newSegment = String(nextChildNumber).padStart(2, '0'); // הופך את 5 ל-"05"
