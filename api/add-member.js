@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    // 1. שליפת נתוני ההורה הביולוגי (תמיד מסתיים ב-0)
+    // 1. שליפת נתוני ההורה הביולוגי
     const parentQuery = `
       SELECT id, gender, mothers_name, full_name 
       FROM family_members 
@@ -23,25 +23,19 @@ export default async function handler(req, res) {
     if (parentData.rows.length === 0) throw new Error("הורה לא נמצא");
     
     const parent = parentData.rows[0];
-    const parts = parent.id.split('.');
+    const parentParts = parent.id.split('.');
     
-    // --- א. חישוב דור ומיקום ה-ID החדש ---
+    // --- א. חישוב ה-ID החדש ---
     let replaceIndex = -1;
-    let generation = 0;
-
-    if (parts[1] === '00') {
+    if (parentParts[1] === '00') {
       replaceIndex = 1;
-      generation = 2;
-    } else if (parts[2] === '00') {
+    } else if (parentParts[2] === '00') {
       replaceIndex = 2;
-      generation = 3;
     } else {
       replaceIndex = 3; 
-      generation = 4;
     }
 
-    // --- ב. יצירת ה-ID החדש (ספירת ילדים) ---
-    const prefix = parts.slice(0, replaceIndex).join('.') + '.';
+    const prefix = parentParts.slice(0, replaceIndex).join('.') + '.';
     const countRes = await client.query(
       `SELECT COUNT(*) FROM family_members WHERE id LIKE $1 AND id NOT LIKE '%1' AND split_part(id, '.', $2) != '00'`,
       [prefix + '%', replaceIndex + 1]
@@ -49,35 +43,46 @@ export default async function handler(req, res) {
     
     const childCount = parseInt(countRes.rows[0].count);
     let newId;
-    if (generation < 4) {
+    if (replaceIndex < 3) {
       newId = prefix + String(childCount + 1).padStart(2, '0') + '.0';
     } else {
       newId = prefix + String(childCount + 1);
     }
 
-    // --- ג. חישוב שם לתפילה (מי האמא?) ---
+    // --- ב. חישוב דור לפי ה-ID של הילד (ה-ID החדש שנוצר) ---
+    const childParts = newId.split('.');
+    let generation = 0;
+
+    if (childParts[0] === '00') {
+      generation = 1;
+    } else if (childParts[1] === '00') {
+      generation = 2;
+    } else if (childParts[2] === '00') {
+      generation = 3;
+    } else {
+      generation = 4; // אין 00 באף חטיבה
+    }
+
+    // --- ג. חישוב שם לתפילה ---
     let motherName = null;
     const connectWord = gender === 'נ' ? 'בת' : 'בן';
 
     if (parent.gender === 'נ') {
-      // ההורה הביולוגי הוא אישה -> היא האמא
       motherName = parent.full_name || (parent.first_name + ' ' + parent.last_name);
     } else {
-      // ההורה הביולוגי הוא גבר -> האמא היא בת הזוג שלו (אותו ID עם 1 בסוף)
       const wifeId = parent.id.toString().slice(0, -1) + '1';
       const wifeData = await client.query(`SELECT full_name FROM family_members WHERE id = $1`, [wifeId]);
-      
       if (wifeData.rows.length > 0) {
         motherName = wifeData.rows[0].full_name;
       } else {
-        // גיבוי: עמודת mothers_name של האבא
         motherName = parent.mothers_name || null;
       }
     }
 
+    const nameForHeader = full_name || (first_name + ' ' + last_name);
     const prayerName = motherName 
-      ? `${full_name || (first_name + ' ' + last_name)} ${connectWord} ${motherName}`
-      : `${full_name || (first_name + ' ' + last_name)} ${connectWord} [חסר שם האם]`;
+      ? `${nameForHeader} ${connectWord} ${motherName}`
+      : `${nameForHeader} ${connectWord} [חסר שם האם]`;
 
     // --- ד. המרת תאריך עברי ללועזי ---
     let gregorianDate = null;
@@ -86,12 +91,10 @@ export default async function handler(req, res) {
         `SELECT gregorian_date FROM heb_date WHERE hebrew_date = $1 LIMIT 1`,
         [hebrew_date]
       );
-      if (dateRes.rows.length > 0) {
-        gregorianDate = dateRes.rows[0].gregorian_date;
-      }
+      if (dateRes.rows.length > 0) gregorianDate = dateRes.rows[0].gregorian_date;
     }
 
-    // --- ה. שמירה סופית ל-Neon ---
+    // --- ה. שמירה סופית ---
     const insertQuery = `
       INSERT INTO family_members 
       (id, first_name, last_name, full_name, gender, hebrew_date, son_of, generation, full_name_for_prayers, date_birthday)
@@ -104,9 +107,8 @@ export default async function handler(req, res) {
     ]);
 
     client.release();
-    res.status(200).json({ 
-      message: `נשמר בהצלחה! מזהה: ${newId}, דור: ${generation}, שם לתפילה: ${prayerName}` 
-    });
+    // הודעת הצלחה קצרה כפי שביקשת
+    res.status(200).json({ message: "מזל טוב! הטופס נשלח בהצלחה" });
 
   } catch (error) {
     if (client) client.release();
