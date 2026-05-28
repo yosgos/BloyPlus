@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>הוספת חבר משפחה</title>
     <style>
-        /* עיצוב רקע דינמי ויוקרתי */
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
@@ -16,7 +15,6 @@
             padding: 20px;
             box-sizing: border-box;
         }
-        /* קופסת הטופס בעיצוב זכוכית (Glassmorphism) */
         .form-box {
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(12px);
@@ -30,9 +28,8 @@
             box-sizing: border-box;
         }
         h2 { text-align: center; margin-bottom: 20px; font-weight: 400; }
-        label { font-size: 14px; color: #ccc; display: block; margin-top: 12px; }
+        label { font-size: 14px; color: #ccc; display: block; margin-top: 14px; }
         
-        /* עיצוב שדות הקלט ותפריטי הבחירה */
         input, select {
             width: 100%;
             padding: 10px;
@@ -44,23 +41,47 @@
             box-sizing: border-box;
             font-size: 15px;
         }
-        /* התאמת האופציות בתוך הסלקט שיהיו קריאות על רקע כהה */
         select option {
             background: #203a43;
             color: white;
         }
         input:focus, select:focus { outline: none; border-color: #4ed17d; }
         
-        /* שדה לקריאה בלבד (שם מלא) */
-        input:readonly {
-            background: rgba(255, 255, 255, 0.03);
-            color: #aaa;
-            border-style: dashed;
-            cursor: not-allowed;
+        /* עיצוב לחצני הרדיו (מין) אחד ליד השני */
+        .gender-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 8px;
         }
-        
-        /* כפתור שליחה ירוק בולט */
-        button {
+        .gender-option {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .gender-option input {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
+        /* אפקט יפה כשבוחרים בלחצן הרדיו */
+        .gender-option:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .gender-option has(:checked), /* תמיכה בדפדפנים מודרניים */
+        .gender-option:focus-within {
+            border-color: #4ed17d;
+            background: rgba(78, 209, 125, 0.15);
+        }
+
+        button[type="submit"] {
             width: 100%;
             padding: 12px;
             background: #4ed17d;
@@ -70,10 +91,10 @@
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
-            margin-top: 20px;
+            margin-top: 24px;
         }
-        button:hover { background: #3db86b; transform: translateY(-1px); }
-        button:disabled { background: #555; cursor: not-allowed; color: #aaa; }
+        button[type="submit"]:hover { background: #3db86b; transform: translateY(-1px); }
+        button[type="submit"]:disabled { background: #555; cursor: not-allowed; color: #aaa; }
         #statusMessage { text-align: center; margin-top: 15px; font-size: 14px; }
     </style>
 </head>
@@ -88,15 +109,20 @@
         <label>שם משפחה *</label>
         <input type="text" id="last_name" required autocomplete="off">
 
-        <label>שם מלא</label>
-        <input type="text" id="full_name" readonly placeholder="יתמלא אוטומטית">
+        <label>שם מלא *</label>
+        <input type="text" id="full_name" required autocomplete="off" placeholder="הזן שם מלא...">
 
         <label>מין *</label>
-        <select id="gender" required>
-            <option value="" disabled selected>בחר מין...</option>
-            <option value="ז">זכר (ז)</option>
-            <option value="נ">נקבה (נ)</option>
-        </select>
+        <div class="gender-container">
+            <label class="gender-option">
+                <input type="radio" name="gender" value="ז" required>
+                <span>זכר</span>
+            </label>
+            <label class="gender-option">
+                <input type="radio" name="gender" value="נ" required>
+                <span>נקבה</span>
+            </label>
+        </div>
 
         <label>תאריך לידה עברי *</label>
         <input type="text" id="hebrew_date" placeholder="למשל: כה תמוז תשט" required autocomplete="off">
@@ -112,21 +138,9 @@
 </div>
 
 <script>
-    const firstNameInput = document.getElementById('first_name');
-    const lastNameInput = document.getElementById('last_name');
-    const fullNameInput = document.getElementById('full_name');
     const parentSelect = document.getElementById('son_of');
 
-    // שרשור אוטומטי של שם פרטי + משפחה בזמן ההקלדה
-    function updateFullName() {
-        const first = firstNameInput.value.trim();
-        const last = lastNameInput.value.trim();
-        fullNameInput.value = first && last ? `${first} ${last}` : (first || last);
-    }
-    firstNameInput.addEventListener('input', updateFullName);
-    lastNameInput.addEventListener('input', updateFullName);
-
-    // טעינת רשימת ההורים מהשרת ברגע שהדף עולה
+    // טעינת רשימת ההורים מהשרת (כבר מגיעה ממוינת!)
     window.onload = async () => {
         try {
             const response = await fetch('/api/get-eligible-parents');
@@ -138,8 +152,8 @@
             
             parents.forEach(parent => {
                 const option = document.createElement('option');
-                option.value = parent.name; // הערך שיישלח לעמודת son_of (שם פרטי + שם משפחה)
-                option.textContent = `${parent.name} (${parent.id})`; // מה שהמשתמש יראה בסלקט
+                option.value = parent.name;     // הערך שנשלח לשרת
+                option.textContent = parent.name; // המשתמש רואה רק את השם, בלי ה-ID!
                 parentSelect.appendChild(option);
             });
         } catch (err) {
@@ -159,11 +173,14 @@
         btn.innerText = 'שומר נתונים...';
         status.innerText = '';
 
+        // בדיקה איזה לחצן רדיו של מין נבחר
+        const selectedGender = document.querySelector('input[name="gender"]:checked').value;
+
         const payload = {
-            first_name: firstNameInput.value.trim(),
-            last_name: lastNameInput.value.trim(),
-            full_name: fullNameInput.value.trim(),
-            gender: document.getElementById('gender').value,
+            first_name: document.getElementById('first_name').value.trim(),
+            last_name: document.getElementById('last_name').value.trim(),
+            full_name: document.getElementById('full_name').value.trim(),
+            gender: selectedGender,
             hebrew_date: document.getElementById('hebrew_date').value.trim(),
             son_of: parentSelect.value
         };
@@ -181,8 +198,7 @@
                 status.style.color = '#4ed17d';
                 status.innerText = result.message || 'החבר נשמר בהצלחה!';
                 document.getElementById('familyForm').reset();
-                fullNameInput.value = ''; // איפוס ידני לשדה ה-readonly
-                parentSelect.value = ""; // איפוס תפריט ההורים
+                parentSelect.value = ""; 
             } else {
                 status.style.color = '#ff6b6b';
                 status.innerText = result.error || 'חלה שגיאה בשמירה';
