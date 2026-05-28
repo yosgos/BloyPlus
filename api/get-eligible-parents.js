@@ -6,7 +6,6 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
-  // כאן אנחנו מאפשרים רק בקשת GET (שליפת נתונים)
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -14,7 +13,7 @@ export default async function handler(req, res) {
   try {
     const client = await pool.connect();
     
-    // השאילתה שמסננת רק הורים רלוונטיים (נשואים, ID נגמר ב-0, ולא מתחיל ב-00)
+    // שאילתה עם מיון מתוחכם לפי דורות ומקטעי ה-ID
     const query = `
       SELECT 
           id, 
@@ -23,12 +22,18 @@ export default async function handler(req, res) {
       WHERE married_to IS NOT NULL 
         AND id LIKE '%0'
         AND id NOT LIKE '00%'
+      ORDER BY 
+          -- 1. מיון לפי דור: קודם כל מי שהמקטע השני שלו הוא '00' (למעלה), ואז השאר
+          CASE WHEN split_part(id, '.', 2) = '00' THEN 1 ELSE 2 END ASC,
+          -- 2. מיון פנימי לפי חלקי ה-ID (כדי ש-01 יבוא לפני 02)
+          split_part(id, '.', 1) ASC,
+          split_part(id, '.', 2) ASC,
+          split_part(id, '.', 3) ASC
     `;
     
     const response = await client.query(query);
     client.release();
     
-    // מחזירים את השורות שחזרו כ-JSON לדפדפן
     return res.status(200).json(response.rows);
 
   } catch (error) {
