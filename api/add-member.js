@@ -6,32 +6,27 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
-  // כאן אנחנו מאפשרים רק בקשת GET (שליפת נתונים)
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  // כאן אנחנו חייבים POST בשביל להוסיף נתונים!
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'מותר לשלוח רק נתוני טופס (POST)' });
   }
+
+  const { first_name, last_name, full_name, gender, hebrew_date, son_of } = req.body;
 
   try {
     const client = await pool.connect();
     
-    // השאילתה שמסננת רק הורים רלוונטיים (נשואים, ID נגמר ב-0, ולא מתחיל ב-00)
     const query = `
-      SELECT 
-          id, 
-          (first_name || ' ' || last_name) AS name 
-      FROM family_members 
-      WHERE married_to IS NOT NULL 
-        AND id LIKE '%0'
-        AND id NOT LIKE '00%'
+      INSERT INTO family_members (first_name, last_name, full_name, gender, hebrew_date, son_of)
+      VALUES ($1, $2, $3, $4, $5, $6)
     `;
     
-    const response = await client.query(query);
-    client.release();
+    await client.query(query, [first_name, last_name, full_name, gender, hebrew_date, son_of]);
     
-    // מחזירים את השורות שחזרו כ-JSON לדפדפן
-    return res.status(200).json(response.rows);
+    client.release();
+    return res.status(200).json({ message: 'הבן/בת משפחה נשמרו בהצלחה ב-Neon!' });
 
   } catch (error) {
-    return res.status(500).json({ error: 'שגיאה בשליפת ההורים: ' + error.message });
+    return res.status(500).json({ error: 'שגיאה בבסיס הנתונים: ' + error.message });
   }
 }
