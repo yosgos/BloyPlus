@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     const parentIdStr = parent.id.toString();
     const parentParts = parentIdStr.split('.');
     
-    // --- א. חישוב ה-ID החדש ---
+    // --- א. חישוב מיקום השינוי ב-ID לפי ההורה ---
     let replaceIndex = -1;
     if (parentParts[1] === '00') {
       replaceIndex = 1;
@@ -36,6 +36,7 @@ export default async function handler(req, res) {
       replaceIndex = 3; 
     }
 
+    // ספירת הילדים הקיימים
     const prefix = parentParts.slice(0, replaceIndex).join('.') + '.';
     const countRes = await client.query(
       `SELECT COUNT(*) FROM family_members WHERE id LIKE $1 AND id NOT LIKE '%1' AND split_part(id, '.', $2) != '00'`,
@@ -43,14 +44,22 @@ export default async function handler(req, res) {
     );
     
     const childCount = parseInt(countRes.rows[0].count);
+    const nextSegment = String(childCount + 1).padStart(2, '0');
+
+    // --- ב. בניית ID חדש באורך אחיד ומלא ---
     let newId;
-    if (replaceIndex < 3) {
-      newId = prefix + String(childCount + 1).padStart(2, '0') + '.0';
+    if (replaceIndex === 1) {
+      // נולד ילד לדור 1 (ההורה הוא למשל 11.00.00.0) -> הילד יהיה 11.01.00.0
+      newId = `${parentParts[0]}.${nextSegment}.00.0`;
+    } else if (replaceIndex === 2) {
+      // נולד ילד לדור 2 (ההורה הוא למשל 11.01.00.0) -> הילד יהיה 11.01.01.0
+      newId = `${parentParts[0]}.${parentParts[1]}.${nextSegment}.0`;
     } else {
-      newId = prefix + String(childCount + 1);
+      // נולד ילד לדור 3 (ההורה הוא למשל 11.01.01.0) -> הילד יהיה 11.01.01.X (ספרה בודדת בסוף)
+      newId = `${parentParts[0]}.${parentParts[1]}.${parentParts[2]}.${childCount + 1}`;
     }
 
-    // --- ב. חישוב דור לפי ה-ID של הילד החדש ---
+    // --- ג. חישוב דור לפי ה-ID של הילד החדש ---
     const childParts = newId.split('.');
     let generation = 0;
     if (childParts[0] === '00') {
@@ -63,7 +72,7 @@ export default async function handler(req, res) {
       generation = 4;
     }
 
-    // --- ג. חישוב שם לתפילה ---
+    // --- ד. חישוב שם לתפילה ---
     let motherName = null;
     const connectWord = gender === 'נ' ? 'בת' : 'בן';
 
@@ -84,7 +93,7 @@ export default async function handler(req, res) {
       ? `${nameForHeader} ${connectWord} ${motherName}`
       : `${nameForHeader} ${connectWord} [חסר שם האם]`;
 
-    // --- ד. המרת תאריך עברי ללועזי ---
+    // --- ה. המרת תאריך עברי ללועזי ---
     let gregorianDate = null;
     if (hebrew_date) {
       const dateRes = await client.query(
@@ -94,29 +103,31 @@ export default async function handler(req, res) {
       if (dateRes.rows.length > 0) gregorianDate = dateRes.rows[0].gregorian_date;
     }
 
-    // --- ה. שליפת שם הענף מטבלת branches לפי תז המשפחה של ההורה ---
+    // --- ו. שליפת שם הענף והכתובת מטבלת branches ---
     const familyId = parentIdStr.substring(0, 5); // 5 תווים ראשונים של ההורה
     let branchName = null;
+    let branchAddress = null;
 
     const branchRes = await client.query(
-      `SELECT name_branch FROM branches WHERE "Family_id" = $1 LIMIT 1`,
+      `SELECT name_branch, address FROM branches WHERE "Family_id" = $1 LIMIT 1`,
       [familyId]
     );
 
     if (branchRes.rows.length > 0) {
       branchName = branchRes.rows[0].name_branch;
+      branchAddress = branchRes.rows[0].address;
     }
 
-    // --- ו. שמירה סופית לטבלת family_members ---
+    // --- ז. שמירה סופית לטבלת family_members ---
     const insertQuery = `
       INSERT INTO family_members 
-      (id, first_name, last_name, full_name, gender, hebrew_date, son_of, generation, full_name_for_prayers, date_birthday, branch)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      (id, first_name, last_name, full_name, gender, hebrew_date, son_of, generation, full_name_for_prayers, date_birthday, branch, address)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     `;
 
     await client.query(insertQuery, [
       newId, first_name, last_name, full_name, gender, hebrew_date, son_of, 
-      generation, prayerName, gregorianDate, branchName
+      generation, prayerName, gregorianDate, branchName, branchAddress
     ]);
 
     client.release();
