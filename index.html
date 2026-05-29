@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>ניהול חברי משפחה וענפים</title>
+    <title>מערכת ניהול משפחה וענפים</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -16,7 +16,47 @@
             box-sizing: border-box;
             overflow-y: auto;
         }
-        .page-title { color: white; font-weight: 300; font-size: 2.2rem; margin-bottom: 30px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; }
+        .page-title { color: white; font-weight: 300; font-size: 2.2rem; margin-bottom: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; }
+        
+        /* 🌟 עיצוב תפריט הניווט החדש */
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 550px;
+            box-sizing: border-box;
+        }
+        .nav-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 12px 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        .nav-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .nav-btn.active {
+            color: #0f2027;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* עיצוב תיבות הטפסים */
         .form-box {
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(12px);
@@ -25,12 +65,19 @@
             padding: 30px;
             border-radius: 16px;
             width: 100%;
-            max-width: 460px;
+            max-width: 550px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             color: white;
             box-sizing: border-box;
             margin-bottom: 40px;
+            animation: fadeIn 0.4s ease-in-out;
         }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         h2 { text-align: center; margin-top: 0; margin-bottom: 20px; font-weight: 400; color: #4ed17d; }
         h3 { margin-top: 0; margin-bottom: 20px; font-weight: 400; text-align: center; color: #4e9ad1; }
         label { font-size: 14px; color: #ccc; display: block; margin-top: 14px; }
@@ -80,12 +127,13 @@
 
 <h1 class="page-title">מערכת ניהול ועדכון חברי המשפחה</h1>
 
-<div class="form-box" style="max-width: 550px; border-color: rgba(255, 183, 3, 0.3);">
-    <h3 style="color: #ffb703;">🔄 ביטול פעולות והיסטוריית עדכונים</h3>
-    <div id="logsContainer">טוען היסטוריית פעולות...</div>
+<div class="nav-menu">
+    <button class="nav-btn active" id="btn-add" onclick="switchTab('add')">הוספת חבר</button>
+    <button class="nav-btn" id="btn-update" onclick="switchTab('update')">עדכון שם תינוק</button>
+    <button class="nav-btn" id="btn-history" onclick="switchTab('history')" style="color: #ffb703;">ביטול פעולות והיסטוריה</button>
 </div>
 
-<div class="form-box">
+<div id="section-add" class="form-box">
     <h2>הוספת חבר משפחה</h2>
     <label>סוג המצטרף</label>
     <div class="type-container">
@@ -136,7 +184,7 @@
     <div id="statusMessage" class="status-msg"></div>
 </div>
 
-<div class="form-box">
+<div id="section-update" class="form-box hidden">
     <h3>עדכון שם לתינוק / תינוקת</h3>
     <form id="updateBabyForm">
         <label for="babySelect">בחר תינוק/ת לעדכון *</label>
@@ -152,10 +200,36 @@
     <div id="updateMessage" class="status-msg"></div>
 </div>
 
+<div id="section-history" class="form-box hidden" style="border-color: rgba(255, 183, 3, 0.3);">
+    <h3 style="color: #ffb703;">🔄 ביטול פעולות והיסטוריית עדכונים</h3>
+    <div id="logsContainer">טוען היסטוריית פעולות...</div>
+</div>
+
 <script>
     const parentSelect = document.getElementById('son_of');
     const babySelect = document.getElementById('babySelect');
     const logsContainer = document.getElementById('logsContainer');
+
+    // 🌟 פונקציית הניווט בין הטאבים השונים
+    function switchTab(tabName) {
+        // הסתרת כל הסקשנים
+        document.getElementById('section-add').classList.add('hidden');
+        document.getElementById('section-update').classList.add('hidden');
+        document.getElementById('section-history').classList.add('hidden');
+        
+        // הסרת קלאס אקטיבי מכל הכפתורים
+        document.getElementById('btn-add').classList.remove('active');
+        document.getElementById('btn-update').classList.remove('active');
+        document.getElementById('btn-history').classList.remove('active');
+
+        // הצגת הסקשן הנבחר והפיכת הכפתור שלו לאקטיבי
+        document.getElementById(`section-${tabName}`).classList.remove('hidden');
+        document.getElementById(`btn-${tabName}`).classList.add('active');
+
+        // טעינת נתונים ספציפית בהתאם לטאב שנפתח לביצועים אופטימליים
+        if (tabName === 'history') loadActionLogs();
+        if (tabName === 'update') loadMissingNameBabies();
+    }
 
     async function loadEligibleList(type) {
         parentSelect.innerHTML = '<option value="" disabled selected>טוען רשימה מהשרת...</option>';
@@ -185,7 +259,6 @@
         } catch (e) { babySelect.innerHTML = '<option value="" disabled>שגיאה בטעינה</option>'; }
     }
 
-    // שליפת הלוגים והצגתם על המסך עם פירוט פקודות ה-SQL
     async function loadActionLogs() {
         logsContainer.innerHTML = 'טוען פקודות אחרונות...';
         try {
@@ -198,7 +271,6 @@
                 const item = document.createElement('div');
                 item.className = 'log-item';
                 
-                // פירוט השינויים הטכניים שהתבצעו
                 let sqlDetails = `DELETE FROM family_members WHERE id = '${log.affected_ids.inserted_member_id}';`;
                 if (log.affected_ids.updated_bio_id) {
                     sqlDetails += `\nUPDATE family_members SET married_to = NULL WHERE id = '${log.affected_ids.updated_bio_id}';`;
@@ -218,7 +290,6 @@
         } catch (e) { logsContainer.innerHTML = 'שגיאה בטעינת היסטוריית השינויים'; }
     }
 
-    // ביצוע ה-Rollback בפועל בלחיצת כפתור
     async function executeRollback(logId) {
         if (!confirm("האם אתה בטוח שברצונך לבטל פעולה זו לחלוטין ולמחוק את כל הרשומות שהיא יצרה מ-Neon?")) return;
         try {
@@ -230,7 +301,6 @@
             const res = await response.json();
             alert(res.message || 'הפעולה בוטלה');
             
-            // רענון כל המערכת
             loadActionLogs();
             loadMissingNameBabies();
             toggleFormFields();
@@ -262,8 +332,6 @@
 
     window.onload = () => {
         loadEligibleList('newborn');
-        loadMissingNameBabies();
-        loadActionLogs(); // טעינת הלוגים בהתחלה
     };
 
     document.getElementById('familyForm').onsubmit = async (e) => {
@@ -291,8 +359,6 @@
                 status.style.color = '#4ed17d'; status.innerText = res.message;
                 document.getElementById('familyForm').reset();
                 toggleFormFields();
-                loadMissingNameBabies();
-                loadActionLogs(); // רענון הלוגים מיידית אחרי שמירה!
             } else { status.style.color = '#ff6b6b'; status.innerText = res.error; }
         } catch (err) { status.style.color = '#ff6b6b'; status.innerText = 'שגיאת שרת'; }
         finally { btn.disabled = false; btn.innerText = 'שמור ב-Neon'; }
