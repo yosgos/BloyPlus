@@ -20,27 +20,13 @@ export default async function handler(req, res) {
     `;
     const parentData = await client.query(parentQuery, [son_of]);
 
-    if (parentData.rows.length === 0) throw new Error("הורה לא נמצא");
+    if (parentData.rows.length === 0) throw new Error("הורה לא נמצא במסד הנתונים");
     
     const parent = parentData.rows[0];
-    const parentParts = parent.id.split('.');
+    const parentIdStr = parent.id.toString();
+    const parentParts = parentIdStr.split('.');
     
-    // --- א. גזירת קוד הענף מתוך תז ההורה (5 תווים ראשונים) ---
-    const branchCode = parent.id.substring(0, 5); // תופס למשל "05.00" או "03.05"
-
-    // שליפת שם הענף והכתובת מטבלת branches
-    const branchQuery = `
-      SELECT name_branch, address 
-      FROM "branches" 
-      WHERE branch_code = $1 LIMIT 1
-    `;
-    const branchData = await client.query(branchQuery, [branchCode]);
-    
-    // אם הענף לא נמצא בטבלה, נשים ערכי null כדי שהקוד לא יקרוס
-    const branchName = branchData.rows.length > 0 ? branchData.rows[0].name_branch : null;
-    const branchAddress = branchData.rows.length > 0 ? branchData.rows[0].address : null;
-
-    // --- ב. חישוב ה-ID החדש של הילד ---
+    // --- א. חישוב ה-ID החדש ---
     let replaceIndex = -1;
     if (parentParts[1] === '00') {
       replaceIndex = 1;
@@ -64,7 +50,7 @@ export default async function handler(req, res) {
       newId = prefix + String(childCount + 1);
     }
 
-    // --- ג. חישוב דור לפי ה-ID של הילד ---
+    // --- ב. חישוב דור לפי ה-ID של הילד החדש ---
     const childParts = newId.split('.');
     let generation = 0;
     if (childParts[0] === '00') {
@@ -77,14 +63,14 @@ export default async function handler(req, res) {
       generation = 4;
     }
 
-    // --- ד. חישוב שם לתפילה ---
+    // --- ג. חישוב שם לתפילה ---
     let motherName = null;
     const connectWord = gender === 'נ' ? 'בת' : 'בן';
 
     if (parent.gender === 'נ') {
       motherName = parent.full_name || (parent.first_name + ' ' + parent.last_name);
     } else {
-      const wifeId = parent.id.toString().slice(0, -1) + '1';
+      const wifeId = parentIdStr.slice(0, -1) + '1';
       const wifeData = await client.query(`SELECT full_name FROM family_members WHERE id = $1`, [wifeId]);
       if (wifeData.rows.length > 0) {
         motherName = wifeData.rows[0].full_name;
@@ -98,7 +84,7 @@ export default async function handler(req, res) {
       ? `${nameForHeader} ${connectWord} ${motherName}`
       : `${nameForHeader} ${connectWord} [חסר שם האם]`;
 
-    // --- ה. המרת תאריך עברי ללועזי ---
+    // --- ד. המרת תאריך עברי ללועזי ---
     let gregorianDate = null;
     if (hebrew_date) {
       const dateRes = await client.query(
@@ -108,8 +94,22 @@ export default async function handler(req, res) {
       if (dateRes.rows.length > 0) gregorianDate = dateRes.rows[0].gregorian_date;
     }
 
-    // --- ו. שמירה סופית ל-Neon (כולל הענף והכתובת שנשאבו) ---
-    // הנחתי ששמות העמודות בטבלת חברי המשפחה הן גם name_branch ו-address, שנה אותן ב-INSERT אם הן נקראות אחרת
+    // --- ה. שליפת שם הענף והכתובת מטבלת branches ---
+    const familyId = parentIdStr.substring(0, 5); // 5 תווים ראשונים של ההורה (למשל "05.00" או "03.05")
+    let branchName = null;
+    let branchAddress = null;
+
+    const branchRes = await client.query(
+      `SELECT name_branch, address FROM "Branches" WHERE "Family_id" = $1 LIMIT 1`,
+      [familyId]
+    );
+
+    if (branchRes.rows.length > 0) {
+      branchName = branchRes.rows[0].name_branch;
+      branchAddress = branchRes.rows[0].address;
+    }
+
+    // --- ו. שמירה סופית לטבלה הראשית ---
     const insertQuery = `
       INSERT INTO family_members 
       (id, first_name, last_name, full_name, gender, hebrew_date, son_of, generation, full_name_for_prayers, date_birthday, name_branch, address)
