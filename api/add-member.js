@@ -16,19 +16,20 @@ export default async function handler(req, res) {
   const client = await pool.connect();
 
   try {
-    const nameForHeader = full_name || (first_name + ' ' + last_name);
+    // הגדרת שם תצוגה נקי: שם פרטי + שם משפחה (למשל: יוסי גושן)
+    const displayNameNewMember = `${first_name} ${last_name}`;
     const connectWord = gender === 'נ' ? 'בת' : 'בן';
 
-    // התחלת טרנזקציה כדי לוודא שכל הפעולות מצליחות ביחד
+    // התחלת טרנזקציה
     await client.query('BEGIN');
 
     // ==========================================
-    // לוגיקה א': הוספת חתן או כלה (Spouse) + עדכון נשואים ופתיחת ענף
+    // לוגיקה א': הוספת חתן או כלה (Spouse)
     // ==========================================
     if (member_type === 'spouse') {
-      // 1. שליפת הנתונים של בן המשפחה הביולוגי (זה שנמצא בתוך son_of)
+      // 1. שליפת הנתונים של בן המשפחה הביולוגי
       const biologicalQuery = `
-        SELECT id, first_name, last_name, full_name, generation, branch, address 
+        SELECT id, first_name, last_name, generation, branch, address 
         FROM family_members 
         WHERE (first_name || ' ' || last_name) = $1 LIMIT 1
       `;
@@ -36,16 +37,18 @@ export default async function handler(req, res) {
       if (biologicalData.rows.length === 0) throw new Error("בן/בת הזוג הביולוגי לא נמצאו במערכת");
 
       const bioPerson = biologicalData.rows[0];
-      const bioName = bioPerson.full_name || (bioPerson.first_name + ' ' + bioPerson.last_name);
+      // שם תצוגה של הביולוגי (שם פרטי + משפחה)
+      const displayNameBio = `${bioPerson.first_name} ${bioPerson.last_name}`; 
       
-      // יצירת ה-ID החדש למצטרף (החלפת הספרה האחרונה מ-0 ל-1)
+      // יצירת ה-ID החדש למצטרף (ספרת ביקורת 1)
       const bioIdStr = bioPerson.id.toString();
       const newSpouseId = bioIdStr.slice(0, -1) + '1';
 
-      // שם לתפילה עבור המצטרף החדש
+      // בניית שם לתפילה מבוסס על ה-full_name (שם הקודש) אם קיים, ואם לא על השם הפרטי
+      const nameForPrayer = full_name || first_name;
       const prayerName = mothers_name 
-        ? `${nameForHeader} ${connectWord} ${mothers_name}`
-        : `${nameForHeader} ${connectWord} [חסר שם האם]`;
+        ? `${nameForPrayer} ${connectWord} ${mothers_name}`
+        : `${nameForPrayer} ${connectWord} [חסר שם האם]`;
 
       // המרת תאריך עברי ללועזי
       let gregorianDate = null;
@@ -57,40 +60,42 @@ export default async function handler(req, res) {
         if (dateRes.rows.length > 0) gregorianDate = dateRes.rows[0].gregorian_date;
       }
 
-      // פעולה 1: הכנסת החתן/כלה החדשים לטבלה (השדה married_to שלהם מקבל את שם הביולוגי)
+      // פעולה 1: הכנסת המצטרף החדש (married_to מקבל את השם הפרטי+משפחה של הביולוגי)
       const insertSpouseQuery = `
         INSERT INTO family_members 
         (id, first_name, last_name, full_name, gender, hebrew_date, married_to, generation, full_name_for_prayers, date_birthday, branch, address, maiden_name_for_brides, mothers_name)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       `;
       await client.query(insertSpouseQuery, [
-        newSpouseId, first_name, last_name, full_name, gender, hebrew_date, bioName,
+        newSpouseId, first_name, last_name, full_name, gender, hebrew_date, displayNameBio,
         bioPerson.generation, prayerName, gregorianDate, bioPerson.branch, bioPerson.address,
         gender === 'נ' ? maiden_name : null, mothers_name
       ]);
 
-      // פעולה 2: עדכון בן המשפחה הביולוגי – מעכשיו הוא נשוי למצטרף החדש!
+      // פעולה 2: עדכון בן המשפחה הביולוגי (married_to מקבל שם פרטי+משפחה של המצטרף)
       const updateBiologicalQuery = `
         UPDATE family_members 
         SET married_to = $1 
         WHERE id = $2
       `;
-      await client.query(updateBiologicalQuery, [nameForHeader, bioPerson.id]);
+      await client.query(updateBiologicalQuery, [displayNameNewMember, bioPerson.id]);
 
-      // פעולה 3: פתיחת ענף חדש בטבלת בראנצעז (branches)
-      // גזירת ה-Family_id מתוך ה-ID של הביולוגי (5 תווים ראשונים, למשל "04.01")
+      // פעולה 3: פתיחת ענף חדש בטבלת בראנצעז עם כתובת ריקה (NULL)
       const newFamilyId = bioIdStr.substring(0, 5); 
-      const newBranchName = `הענף של ${bioName}`;
+      const newBranchName = `הענף של ${displayNameBio}`;
 
-      const insertBranchQuery = `
-        INSERT INTO branches ("Family_id", name_branch, address)
-        VALUES ($1, $2, $3)
-        ON CONFLICT ("Family_id") DO NOTHING
-      `;
-      await client.query(insertBranchQuery, [newFamilyId, newBranchName, bioPerson.address]);
+      // בדיקה אם ה-Family_id כבר קיים (מונע קריסה למקרה שהאינדקס הייחודי עדיין לא הוגדר)
+      const branchCheck = await client.query('SELECT 1 FROM branches WHERE "Family_id" = $1 LIMIT 1', [newFamilyId]);
+      if (branchCheck.rows.length === 0) {
+        const insertBranchQuery = `
+          INSERT INTO branches ("Family_id", name_branch, address)
+          VALUES ($1, $2, NULL)
+        `;
+        await client.query(insertBranchQuery, [newFamilyId, newBranchName]);
+      }
 
     // ==========================================
-    // לוגיקה ב': הוספת ילד/תינוק (נשארה ללא שינוי)
+    // לוגיקה ב': הוספת ילד/תינוק
     // ==========================================
     } else {
       const parentQuery = `
@@ -132,20 +137,21 @@ export default async function handler(req, res) {
 
       let motherName = null;
       if (parent.gender === 'נ') {
-        motherName = parent.full_name || (parent.first_name + ' ' + parent.last_name);
+        motherName = parent.full_name || parent.first_name;
       } else {
         const wifeId = parentIdStr.slice(0, -1) + '1';
-        const wifeData = await client.query(`SELECT full_name FROM family_members WHERE id = $1`, [wifeId]);
+        const wifeData = await client.query(`SELECT full_name, first_name FROM family_members WHERE id = $1`, [wifeId]);
         if (wifeData.rows.length > 0) {
-          motherName = wifeData.rows[0].full_name;
+          motherName = wifeData.rows[0].full_name || wifeData.rows[0].first_name;
         } else {
           motherName = parent.mothers_name || null;
         }
       }
 
+      const nameForPrayer = full_name || first_name;
       const prayerName = motherName 
-        ? `${nameForHeader} ${connectWord} ${motherName}`
-        : `${nameForHeader} ${connectWord} [חסר שם האם]`;
+        ? `${nameForPrayer} ${connectWord} ${motherName}`
+        : `${nameForPrayer} ${connectWord} [חסר שם האם]`;
 
       let gregorianDate = null;
       if (hebrew_date) {
@@ -181,13 +187,11 @@ export default async function handler(req, res) {
       ]);
     }
 
-    // אישור הטרנזקציה ושמירת כל השינויים יחד
     await client.query('COMMIT');
     client.release();
-    res.status(200).json({ message: "מזל טוב! הטופס נשלח בהצלחה, ובן הזוג והענף עודכנו." });
+    res.status(200).json({ message: "מזל טוב! הטופס נשלח בהצלחה, הענף החדש נפתח והנשואים עודכנו." });
 
   } catch (error) {
-    // אם משהו נכשל, נבצע ביטול (Rollback) כדי שלא יישארו חצאי נתונים ב-DB
     if (client) {
       await client.query('ROLLBACK');
       client.release();
