@@ -8,9 +8,10 @@ const pool = new Pool({
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
+  // שינוי קריטי: שליפת son_of מהגוף של הבקשה במקום related_person
   const { 
     member_type, first_name, last_name, full_name, gender, 
-    hebrew_date, related_person, mothers_name, maiden_name 
+    hebrew_date, son_of, mothers_name, maiden_name 
   } = req.body;
 
   const client = await pool.connect();
@@ -28,12 +29,13 @@ export default async function handler(req, res) {
         FROM family_members 
         WHERE (first_name || ' ' || last_name) = $1 LIMIT 1
       `;
-      const spouseData = await client.query(spouseQuery, [related_person]);
+      // החיפוש מתבצע כעת על המשתנה son_of שמגיע מהטופס
+      const spouseData = await client.query(spouseQuery, [son_of]);
       if (spouseData.rows.length === 0) throw new Error("בן/בת הזוג לא נמצאו במערכת");
 
       const spouse = spouseData.rows[0];
       
-      // החלפת ספרת הביקורת האחרונה מ-0 ל-1 (תמיד עובד, בכל הדורות!)
+      // החלפת ספרת הביקורת האחרונה מ-0 ל-1
       const spouseIdStr = spouse.id.toString();
       const newId = spouseIdStr.slice(0, -1) + '1';
 
@@ -57,7 +59,7 @@ export default async function handler(req, res) {
       `;
 
       await client.query(insertSpouseQuery, [
-        newId, first_name, last_name, full_name, gender, hebrew_date, related_person,
+        newId, first_name, last_name, full_name, gender, hebrew_date, son_of,
         spouse.generation, prayerName, gregorianDate, spouse.branch, spouse.address,
         gender === 'נ' ? maiden_name : null, mothers_name
       ]);
@@ -71,7 +73,8 @@ export default async function handler(req, res) {
         FROM family_members 
         WHERE (first_name || ' ' || last_name) = $1 LIMIT 1
       `;
-      const parentData = await client.query(parentQuery, [related_person]);
+      // החיפוש מתבצע על המשתנה son_of
+      const parentData = await client.query(parentQuery, [son_of]);
       if (parentData.rows.length === 0) throw new Error("הורה לא נמצא במסד הנתונים");
       
       const parent = parentData.rows[0];
@@ -90,22 +93,19 @@ export default async function handler(req, res) {
       const childCount = parseInt(countRes.rows[0].count);
       const nextSegment = String(childCount + 1).padStart(2, '0');
 
-      // בניית ה-ID החדש - ספרת הביקורת האחרונה היא תמיד 0 לילד ביולוגי!
+      // בניית ה-ID החדש
       let newId;
       if (replaceIndex === 1) {
-        // דור 2: ההורה 04.00.00.0 -> הילד 04.01.00.0
         newId = `${parentParts[0]}.${nextSegment}.00.0`;
       } else if (replaceIndex === 2) {
-        // דור 3: ההורה 04.01.00.0 -> הילד 04.01.01.0
         newId = `${parentParts[0]}.${parentParts[1]}.${nextSegment}.0`;
       } else {
-        // דור 4: ההורה 04.01.01.0 -> הילד 04.01.01.05.0 (5 תתי מקטעים הכרחיים למבנה המלא של דור 4)
         newId = `${parentParts[0]}.${parentParts[1]}.${parentParts[2]}.${nextSegment}.0`;
       }
 
       // חישוב דור לפי ה-ID של הילד החדש
       const childParts = newId.split('.');
-      let generation = 4; // ברירת מחדל לדור 4 (אם אין 00)
+      let generation = 4;
       if (childParts[1] === '00') generation = 2;
       else if (childParts[2] === '00') generation = 3;
 
@@ -155,7 +155,7 @@ export default async function handler(req, res) {
       `;
 
       await client.query(insertQuery, [
-        newId, first_name, last_name, full_name, gender, hebrew_date, related_person, 
+        newId, first_name, last_name, full_name, gender, hebrew_date, son_of, 
         generation, prayerName, gregorianDate, branchName, branchAddress
       ]);
     }
