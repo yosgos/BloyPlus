@@ -94,31 +94,29 @@ export default async function handler(req, res) {
       if (dateRes.rows.length > 0) gregorianDate = dateRes.rows[0].gregorian_date;
     }
 
-    // --- ה. שליפת שם הענף והכתובת מטבלת branches ---
-    const familyId = parentIdStr.substring(0, 5); // 5 תווים ראשונים של ההורה (למשל "05.00" או "03.05")
+    // --- ה. שליפת שם הענף מטבלת branches לפי תז המשפחה של ההורה ---
+    const familyId = parentIdStr.substring(0, 5); // 5 תווים ראשונים של ההורה
     let branchName = null;
-    let branchAddress = null;
 
     const branchRes = await client.query(
-      `SELECT name_branch, address FROM "branches" WHERE "Family_id" = $1 LIMIT 1`,
+      `SELECT name_branch FROM branches WHERE "Family_id" = $1 LIMIT 1`,
       [familyId]
     );
 
     if (branchRes.rows.length > 0) {
       branchName = branchRes.rows[0].name_branch;
-      branchAddress = branchRes.rows[0].address;
     }
 
-    // --- ו. שמירה סופית לטבלה הראשית ---
+    // --- ו. שמירה סופית לטבלת family_members ---
     const insertQuery = `
       INSERT INTO family_members 
-      (id, first_name, last_name, full_name, gender, hebrew_date, son_of, generation, full_name_for_prayers, date_birthday, name_branch, address)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      (id, first_name, last_name, full_name, gender, hebrew_date, son_of, generation, full_name_for_prayers, date_birthday, branch)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     `;
 
     await client.query(insertQuery, [
       newId, first_name, last_name, full_name, gender, hebrew_date, son_of, 
-      generation, prayerName, gregorianDate, branchName, branchAddress
+      generation, prayerName, gregorianDate, branchName
     ]);
 
     client.release();
