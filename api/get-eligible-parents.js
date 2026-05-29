@@ -42,15 +42,6 @@ export default async function handler(req, res) {
             (first_name || ' ' || last_name) AS name 
         FROM family_members 
         WHERE married_to IS NOT NULL 
-          AND id LIKE '%0'
-          AND id NOT LIKE '00%'
-        ORDER BY 
-            -- 1. מיון לפי דור: קודם כל מי שהמקטע השני שלו הוא '00' (למעלה), ואז השאר
-            CASE WHEN split_part(id, '.', 2) = '00' THEN 1 ELSE 2 END ASC,
-            -- 2. מיון פנימי לפי חלקי ה-ID (כדי ש-01 יבוא לפני 02)
-            split_part(id, '.', 1) ASC,
-            split_part(id, '.', 2) ASC,
-            split_part(id, '.', 3) ASC
       `;
     }
     
