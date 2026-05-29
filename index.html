@@ -40,6 +40,7 @@
             color: white;
             box-sizing: border-box;
             font-size: 15px;
+            transition: 0.2s;
         }
         select option {
             background: #203a43;
@@ -47,12 +48,13 @@
         }
         input:focus, select:focus { outline: none; border-color: #4ed17d; }
         
-        .gender-container {
+        /* סגנון כפתורי הרדיו החדשים לבחירת סוג מצטרף */
+        .type-container, .gender-container {
             display: flex;
             gap: 15px;
             margin-top: 8px;
         }
-        .gender-option {
+        .radio-option {
             flex: 1;
             display: flex;
             align-items: center;
@@ -64,19 +66,22 @@
             border-radius: 6px;
             cursor: pointer;
             transition: 0.2s;
+            user-select: none;
         }
-        .gender-option input {
+        .radio-option input {
             width: auto;
             margin: 0;
             cursor: pointer;
         }
-        .gender-option:hover {
+        .radio-option:hover {
             background: rgba(255, 255, 255, 0.15);
         }
-        .gender-option:focus-within {
+        .radio-option.active {
             border-color: #4ed17d;
             background: rgba(78, 209, 125, 0.15);
         }
+
+        .hidden { display: none !important; }
 
         button[type="submit"] {
             width: 100%;
@@ -99,6 +104,19 @@
 
 <div class="form-box">
     <h2>הוספת חבר משפחה</h2>
+    
+    <label>סוג המצטרף</label>
+    <div class="type-container">
+        <label class="radio-option active" id="typeNewbornLabel">
+            <input type="radio" name="member_type" value="newborn" checked onchange="toggleFormFields()">
+            <span>ילד/תינוק חדש</span>
+        </label>
+        <label class="radio-option" id="typeSpouseLabel">
+            <input type="radio" name="member_type" value="spouse" onchange="toggleFormFields()">
+            <span>חתן / כלה</span>
+        </label>
+    </div>
+
     <form id="familyForm">
         <label>שם פרטי *</label>
         <input type="text" id="first_name" required autocomplete="off">
@@ -111,22 +129,32 @@
 
         <label>מין</label>
         <div class="gender-container">
-            <label class="gender-option">
-                <input type="radio" name="gender" value="ז">
+            <label class="radio-option" id="genderMLabel">
+                <input type="radio" name="gender" value="ז" onchange="toggleBrideField()">
                 <span>זכר</span>
             </label>
-            <label class="gender-option">
-                <input type="radio" name="gender" value="נ">
+            <label class="radio-option" id="genderFLabel">
+                <input type="radio" name="gender" value="נ" onchange="toggleBrideField()">
                 <span>נקבה</span>
             </label>
+        </div>
+
+        <div id="bride_field_container" class="hidden">
+            <label>שם נעורים (לכלות בלבד)</label>
+            <input type="text" id="maiden_name" autocomplete="off">
         </div>
 
         <label>תאריך לידה עברי</label>
         <input type="text" id="hebrew_date" placeholder="אופציונלי..." autocomplete="off">
 
-        <label>שם ההורה (בן/בת של) *</label>
+        <div id="mother_field_container" class="hidden">
+            <label>שם אם המצטרף (עבור שם לתפילה)</label>
+            <input type="text" id="mothers_name" autocomplete="off">
+        </div>
+
+        <label id="select_label">שם ההורה (בן/בת של) *</label>
         <select id="son_of" required>
-            <option value="" disabled selected>טוען רשימת הורים...</option>
+            <option value="" disabled selected>טוען רשימה...</option>
         </select>
 
         <button type="submit" id="submitBtn">שמור ב-Neon</button>
@@ -137,22 +165,73 @@
 <script>
     const parentSelect = document.getElementById('son_of');
 
-    window.onload = async () => {
+    // פונקציה חכמה לטעינת רשימה מהשרת לפי סוג הטופס (newborn / spouse)
+    async function loadEligibleList(type) {
+        parentSelect.innerHTML = '<option value="" disabled selected>טוען רשימה מהשרת...</option>';
         try {
-            const response = await fetch('/api/get-eligible-parents');
-            if (!response.ok) throw new Error('נכשלה טעינת ההורים');
-            const parents = await response.json(); 
-            parentSelect.innerHTML = '<option value="" disabled selected>בחר הורה מהרשימה...</option>';
-            parents.forEach(parent => {
+            const response = await fetch(`/api/get-eligible-parents?type=${type}`);
+            if (!response.ok) throw new Error('נכשלה טעינת הרשימה');
+            const data = await response.json(); 
+            
+            const defaultText = type === 'spouse' ? 'בחר בן/בת זוג מהרשימה...' : 'בחר הורה מהרשימה...';
+            parentSelect.innerHTML = `<option value="" disabled selected>${defaultText}</option>`;
+            
+            data.forEach(person => {
                 const option = document.createElement('option');
-                option.value = parent.name;
-                option.textContent = parent.name;
+                option.value = person.name;
+                option.textContent = person.name;
                 parentSelect.appendChild(option);
             });
         } catch (err) {
             console.error(err);
-            parentSelect.innerHTML = '<option value="" disabled selected>שגיאה בטעינת רשימת ההורים</option>';
+            parentSelect.innerHTML = '<option value="" disabled selected>שגיאה בטעינת הרשימה</option>';
         }
+    }
+
+    // ניהול החלפת שדות לפי סוג המצטרף
+    function toggleFormFields() {
+        const memberType = document.querySelector('input[name="member_type"]:checked').value;
+        const isSpouse = memberType === 'spouse';
+        const label = document.getElementById('select_label');
+        const motherField = document.getElementById('mother_field_container');
+        
+        document.getElementById('typeNewbornLabel').classList.toggle('active', !isSpouse);
+        document.getElementById('typeSpouseLabel').classList.toggle('active', isSpouse);
+
+        if (isSpouse) {
+            label.innerText = 'נשוי/נשואה ל... *';
+            motherField.classList.remove('hidden');
+        } else {
+            label.innerText = 'שם ההורה (בן/בת של) *';
+            motherField.classList.add('hidden');
+        }
+        
+        // טעינת הרשימה המתאימה בזמן אמת
+        loadEligibleList(memberType);
+        toggleBrideField();
+    }
+
+    // ניהול תצוגת שדה כלה (שם נעורים) ועיצוב כפתורי מין
+    function toggleBrideField() {
+        const isSpouse = document.querySelector('input[name="member_type"]:checked').value === 'spouse';
+        const genderRadio = document.querySelector('input[name="gender"]:checked');
+        const isFemale = genderRadio && genderRadio.value === 'נ';
+        const isMale = genderRadio && genderRadio.value === 'ז';
+        const brideField = document.getElementById('bride_field_container');
+
+        document.getElementById('genderMLabel').classList.toggle('active', isMale);
+        document.getElementById('genderFLabel').classList.toggle('active', isFemale);
+
+        if (isSpouse && isFemale) {
+            brideField.classList.remove('hidden');
+        } else {
+            brideField.classList.add('hidden');
+        }
+    }
+
+    // טעינה ראשונית - תינוקות
+    window.onload = () => {
+        loadEligibleList('newborn');
     };
 
     document.getElementById('familyForm').onsubmit = async (e) => {
@@ -165,17 +244,21 @@
         btn.innerText = 'שומר נתונים...';
         status.innerText = '';
 
-        // אם לא נבחר אף לחצן רדיו של מין, נשלח null
         const genderRadio = document.querySelector('input[name="gender"]:checked');
         const selectedGender = genderRadio ? genderRadio.value : null;
+        const memberType = document.querySelector('input[name="member_type"]:checked').value;
 
+        // בניית ה-Payload בצורה בטוחה שתואמת למה שהשרת מצפה
         const payload = {
+            member_type: memberType,
             first_name: document.getElementById('first_name').value.trim(),
             last_name: document.getElementById('last_name').value.trim(),
             full_name: document.getElementById('full_name').value.trim() || null,
             gender: selectedGender,
             hebrew_date: document.getElementById('hebrew_date').value.trim() || null,
-            son_of: parentSelect.value
+            son_of: parentSelect.value, // נשאר son_of בשביל לא לשבור את ה-API
+            mothers_name: document.getElementById('mothers_name').value.trim() || null,
+            maiden_name: document.getElementById('maiden_name').value.trim() || null
         };
 
         try {
@@ -190,8 +273,13 @@
             if (response.ok) {
                 status.style.color = '#4ed17d';
                 status.innerText = result.message || 'החבר נשמר בהצלחה!';
+                
+                // איפוס נקי וחזרה למצב ברירת מחדל
                 document.getElementById('familyForm').reset();
+                document.getElementById('genderMLabel').classList.remove('active');
+                document.getElementById('genderFLabel').classList.remove('active');
                 parentSelect.value = ""; 
+                toggleFormFields();
             } else {
                 status.style.color = '#ff6b6b';
                 status.innerText = result.error || 'חלה שגיאה בשמירה';
