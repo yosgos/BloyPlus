@@ -14,18 +14,9 @@
             align-items: center;
             padding: 40px 20px;
             box-sizing: border-box;
-            overflow-y: auto; /* מאפשר דפדוף וגלילה מלאה על כל המסך */
+            overflow-y: auto;
         }
-        
-        .page-title {
-            color: white;
-            font-weight: 300;
-            font-size: 2.2rem;
-            margin-bottom: 30px;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-
+        .page-title { color: white; font-weight: 300; font-size: 2.2rem; margin-bottom: 30px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; }
         .form-box {
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(12px);
@@ -38,85 +29,51 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             color: white;
             box-sizing: border-box;
-            margin-bottom: 40px; /* מרווח קבוע בין הטפסים ליצירת עמוד ארוך */
+            margin-bottom: 40px;
         }
-        
         h2 { text-align: center; margin-top: 0; margin-bottom: 20px; font-weight: 400; color: #4ed17d; }
         h3 { margin-top: 0; margin-bottom: 20px; font-weight: 400; text-align: center; color: #4e9ad1; }
         label { font-size: 14px; color: #ccc; display: block; margin-top: 14px; }
-        
         input, select {
-            width: 100%;
-            padding: 11px;
-            margin: 6px 0 4px 0;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            box-sizing: border-box;
-            font-size: 15px;
-            transition: 0.2s;
+            width: 100%; padding: 11px; margin: 6px 0 4px 0; border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.1);
+            color: white; box-sizing: border-box; font-size: 15px; transition: 0.2s;
         }
-        
-        select option {
-            background: #203a43;
-            color: white;
-        }
+        select option { background: #203a43; color: white; }
         input:focus, select:focus { outline: none; border-color: #4ed17d; background: rgba(255, 255, 255, 0.15); }
-        
-        .type-container, .gender-container {
-            display: flex;
-            gap: 15px;
-            margin-top: 8px;
-        }
+        .type-container, .gender-container { display: flex; gap: 15px; margin-top: 8px; }
         .radio-option {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 10px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: 0.2s;
-            user-select: none;
+            flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px; border-radius: 6px; cursor: pointer; transition: 0.2s; user-select: none;
         }
-        .radio-option input {
-            width: auto;
-            margin: 0;
-            cursor: pointer;
-        }
-        .radio-option:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-        .radio-option.active {
-            border-color: #4ed17d;
-            background: rgba(78, 209, 125, 0.15);
-        }
-
+        .radio-option input { width: auto; margin: 0; cursor: pointer; }
+        .radio-option:hover { background: rgba(255, 255, 255, 0.15); }
+        .radio-option.active { border-color: #4ed17d; background: rgba(78, 209, 125, 0.15); }
         .hidden { display: none !important; }
-
-        button[type="submit"] {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-top: 24px;
-            font-size: 16px;
-        }
-        
+        button[type="submit"] { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 24px; font-size: 16px; }
         .btn-green { background: #4ed17d; color: #0f2027; }
         .btn-green:hover { background: #3db86b; transform: translateY(-1px); }
         .btn-blue { background: #4e9ad1; color: white; }
         .btn-blue:hover { background: #357cae; transform: translateY(-1px); }
-        
-        button[type="submit"]:disabled { background: #555 !important; cursor: not-allowed; color: #aaa !important; transform: none !important; }
+        button:disabled { background: #555 !important; cursor: not-allowed; color: #aaa !important; transform: none !important; }
         .status-msg { text-align: center; margin-top: 15px; font-size: 14px; font-weight: 500; }
+
+        /* עיצוב רשימת הלוגים */
+        .log-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+        .log-title { font-weight: bold; color: #ffb703; font-size: 14px; margin-bottom: 4px; }
+        .log-details { font-size: 12px; color: #aaa; font-family: monospace; direction: ltr; text-align: right; margin-top: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;}
+        .btn-undo {
+            background: #ff6b6b; color: white; border: none; padding: 6px 12px; font-size: 12px;
+            border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; width: 100%; transition: 0.2s;
+        }
+        .btn-undo:hover { background: #e05353; }
     </style>
 </head>
 <body>
@@ -125,7 +82,6 @@
 
 <div class="form-box">
     <h2>הוספת חבר משפחה</h2>
-    
     <label>סוג המצטרף</label>
     <div class="type-container">
         <label class="radio-option active" id="typeNewbornLabel">
@@ -141,13 +97,10 @@
     <form id="familyForm">
         <label id="first_name_label">שם פרטי</label>
         <input type="text" id="first_name" autocomplete="off">
-
         <label>שם משפחה *</label>
         <input type="text" id="last_name" required autocomplete="off">
-
         <label>שם מלא (לקודש)</label>
         <input type="text" id="full_name" autocomplete="off" placeholder="אופציונלי...">
-
         <label>מין *</label>
         <div class="gender-container">
             <label class="radio-option" id="genderMLabel">
@@ -159,278 +112,191 @@
                 <span>נקבה</span>
             </label>
         </div>
-
         <div id="bride_field_container" class="hidden">
             <label>שם נעורים (לכלות בלבד) *</label>
             <input type="text" id="maiden_name" autocomplete="off">
         </div>
-
         <label>תאריך לידה עברי</label>
         <input type="text" id="hebrew_date" placeholder="למשל: ט חשון תשסד" autocomplete="off">
-
         <div id="mother_field_container" class="hidden">
             <label>שם אם המצטרף (עבור שם לתפילה) *</label>
             <input type="text" id="mothers_name" autocomplete="off">
         </div>
-
         <label id="select_label">שם ההורה (בן/בת של) *</label>
         <select id="son_of" required>
             <option value="" disabled selected>טוען רשימה...</option>
         </select>
-
         <button type="submit" id="submitBtn" class="btn-green">שמור ב-Neon</button>
     </form>
     <div id="statusMessage" class="status-msg"></div>
 </div>
 
-
 <div class="form-box">
     <h3>עדכון שם לתינוק / תינוקת</h3>
-    <p style="font-size: 13px; color: #bbb; text-align: center; margin-top: -10px; margin-bottom: 20px;">לאחר נתינת השם בברית המילה או בזבד הבת</p>
-    
     <form id="updateBabyForm">
         <label for="babySelect">בחר תינוק/ת לעדכון *</label>
         <select id="babySelect" required>
-            <option value="" disabled selected>טוען רשימת תינוקות חסרי שם...</option>
+            <option value="" disabled selected>טוען רשימה...</option>
         </select>
-
         <label for="new_first_name">שם פרטי רשמי נקבע *</label>
-        <input type="text" id="new_first_name" required autocomplete="off" placeholder="למשל: יוסף יצחק">
-
-        <label for="new_full_name">שם מלא לקודש (אופציונלי - אם שונה מהשם הפרטי)</label>
-        <input type="text" id="new_full_name" autocomplete="off" placeholder="השם המלא לתפילה...">
-
+        <input type="text" id="new_first_name" required autocomplete="off">
+        <label for="new_full_name">שם מלא לקודש</label>
+        <input type="text" id="new_full_name" autocomplete="off">
         <button type="submit" id="updateBtn" class="btn-blue">עדכן שם במערכת</button>
     </form>
     <div id="updateMessage" class="status-msg"></div>
 </div>
 
+<div class="form-box" style="max-width: 550px;">
+    <h3>היסטוריית פעולות אחרונות וביטול שינויים</h3>
+    <div id="logsContainer">טוען היסטוריית פעולות...</div>
+</div>
 
 <script>
     const parentSelect = document.getElementById('son_of');
     const babySelect = document.getElementById('babySelect');
+    const logsContainer = document.getElementById('logsContainer');
 
-    // 1. פונקציה חסינה לטעינת רשימת הורים/בני זוג המבוססת על מזהה ID ייחודי
     async function loadEligibleList(type) {
         parentSelect.innerHTML = '<option value="" disabled selected>טוען רשימה מהשרת...</option>';
         try {
             const response = await fetch(`/api/get-eligible-parents?type=${type}`);
-            if (!response.ok) throw new Error(`קוד שגיאה מהשרת: ${response.status}`);
-            
             const data = await response.json(); 
-            const defaultText = type === 'spouse' ? 'בחר בן/בת זוג מהרשימה...' : 'בחר הורה מהרשימה...';
+            const defaultText = type === 'spouse' ? 'בחר בן/בת זוג...' : 'בחר הורה...';
             parentSelect.innerHTML = `<option value="" disabled selected>${defaultText}</option>`;
-            
-            if (!data || data.length === 0) {
-                parentSelect.innerHTML = '<option value="" disabled>לא נמצאו רשומות תואמות</option>';
-                return;
-            }
-
-            data.forEach(person => {
-                const option = document.createElement('option');
-                option.value = person.id; // שמירת ה-ID הייחודי
-                option.textContent = person.name; // הצגת השם למשתמש
-                parentSelect.appendChild(option);
+            data.forEach(p => {
+                const opt = document.createElement('option'); opt.value = p.id; opt.textContent = p.name;
+                parentSelect.appendChild(opt);
             });
-        } catch (err) {
-            console.error("שגיאה בטעינת רשימת הורים:", err);
-            parentSelect.innerHTML = '<option value="" disabled selected>שגיאה בטעינת הרשימה מהשרת</option>';
-        }
+        } catch (err) { parentSelect.innerHTML = '<option value="" disabled>שגיאה בטעינה</option>'; }
     }
 
-    // 2. פונקציה חסינה לשליפת תינוקות ללא שם (מונעת קריסה של כל הדף)
     async function loadMissingNameBabies() {
-        babySelect.innerHTML = '<option value="" disabled selected>טוען רשימה מהשרת...</option>';
+        babySelect.innerHTML = '<option value="" disabled selected>טוען רשימה...</option>';
         try {
             const response = await fetch('/api/update-baby-name');
-            if (!response.ok) throw new Error(`קוד שגיאה מהשרת: ${response.status}`);
-            
             const babies = await response.json();
-
-            if (!babies || babies.length === 0) {
-                babySelect.innerHTML = '<option value="" disabled>אין תינוקות חסרי שם כרגע</option>';
-                return;
-            }
-
-            babySelect.innerHTML = '<option value="" disabled selected>-- בחר תינוק/ת מהרשימה --</option>';
-            babies.forEach(baby => {
-                const option = document.createElement('option');
-                option.value = baby.id;
-                option.textContent = baby.display_label;
-                babySelect.appendChild(option);
+            if (!babies || babies.length === 0) { babySelect.innerHTML = '<option value="" disabled>אין תינוקות חסרי שם</option>'; return; }
+            babySelect.innerHTML = '<option value="" disabled selected>-- בחר תינוק/ת --</option>';
+            babies.forEach(b => {
+                const opt = document.createElement('option'); opt.value = b.id; opt.textContent = b.display_label;
+                babySelect.appendChild(opt);
             });
-        } catch (error) {
-            console.error("שגיאה בטעינת רשימת תינוקות:", error);
-            babySelect.innerHTML = '<option value="" disabled>טופס עדכון תינוקות לא זמין כרגע</option>';
-        }
+        } catch (e) { babySelect.innerHTML = '<option value="" disabled>שגיאה בטעינה</option>'; }
     }
 
-    // ניהול שדות דינמי וחובת מילוי לפי סוג מצטרף
+    // 🌟 שליפת הלוגים והצגתם על המסך עם פירוט פקודות ה-SQL
+    async function loadActionLogs() {
+        logsContainer.innerHTML = 'טוען פקודות אחרונות...';
+        try {
+            const response = await fetch('/api/rollback-action');
+            const logs = await response.json();
+            if (!logs || logs.length === 0) { logsContainer.innerHTML = '<p style="text-align:center; color:#888;">אין פעולות מתועדות בהיסטוריה</p>'; return; }
+            
+            logsContainer.innerHTML = '';
+            logs.forEach(log => {
+                const item = document.createElement('div');
+                item.className = 'log-item';
+                
+                // פירוט השינויים הטכניים שהתבצעו
+                let sqlDetails = `DELETE FROM family_members WHERE id = '${log.affected_ids.inserted_member_id}';`;
+                if (log.affected_ids.updated_bio_id) {
+                    sqlDetails += `\nUPDATE family_members SET married_to = NULL WHERE id = '${log.affected_ids.updated_bio_id}';`;
+                }
+                if (log.affected_ids.inserted_branch_id) {
+                    sqlDetails += `\nDELETE FROM branches WHERE "Family_id" = '${log.affected_ids.inserted_branch_id}';`;
+                }
+
+                item.innerHTML = `
+                    <div class="log-title">${log.description}</div>
+                    <div style="font-size:11px; color:#66c2ff;">${new Date(log.created_at).toLocaleTimeString('he-IL')} - שינויי SQL שבוצעו:</div>
+                    <div class="log-details">${sqlDetails.replace(/\n/g, '<br>')}</div>
+                    <button class="btn-undo" onclick="executeRollback(${log.id})">בטל פעולה זו ומחק מה-DB</button>
+                `;
+                logsContainer.appendChild(item);
+            });
+        } catch (e) { logsContainer.innerHTML = 'שגיאה בטעינת היסטוריית השינויים'; }
+    }
+
+    // 🌟 ביצוע ה-Rollback בפועל בלחיצת כפתור
+    async function executeRollback(logId) {
+        if (!confirm("האם אתה בטוח שברצונך לבטל פעולה זו לחלוטיิน ולמחוק את כל הרשומות שהיא יצרה מ-Neon?")) return;
+        try {
+            const response = await fetch('/api/rollback-action', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ log_id: logId })
+            });
+            const res = await response.json();
+            alert(res.message || 'הפעולה בוטלה');
+            
+            // רענון כל המערכת
+            loadActionLogs();
+            loadMissingNameBabies();
+            toggleFormFields();
+        } catch (e) { alert("שגיאה בתקשורת בביטול הפעולה"); }
+    }
+
     function toggleFormFields() {
         const memberType = document.querySelector('input[name="member_type"]:checked').value;
         const isSpouse = memberType === 'spouse';
-        const label = document.getElementById('select_label');
-        const motherField = document.getElementById('mother_field_container');
-        const firstNameInput = document.getElementById('first_name');
-        const firstNameLabel = document.getElementById('first_name_label');
-        
         document.getElementById('typeNewbornLabel').classList.toggle('active', !isSpouse);
         document.getElementById('typeSpouseLabel').classList.toggle('active', isSpouse);
-
-        if (isSpouse) {
-            label.innerText = 'נשוי/נשואה ל... *';
-            motherField.classList.remove('hidden');
-            document.getElementById('mothers_name').required = true;
-            
-            firstNameLabel.innerText = 'שם פרטי *';
-            firstNameInput.required = true;
-        } else {
-            label.innerText = 'שם ההורה (בן/בת של) *';
-            motherField.classList.add('hidden');
-            document.getElementById('mothers_name').required = false;
-            
-            firstNameLabel.innerText = 'שם פרטי (אופציונלי לתינוק לפני ברית)';
-            firstNameInput.required = false;
-        }
-        
+        document.getElementById('select_label').innerText = isSpouse ? 'נשוי/נשואה ל... *' : 'שם ההורה (בן/בת של) *';
+        document.getElementById('mother_field_container').classList.toggle('hidden', !isSpouse);
+        document.getElementById('mothers_name').required = isSpouse;
+        document.getElementById('first_name_label').innerText = isSpouse ? 'שם פרטי *' : 'שם פרטי (אופציונלי לתינוק לפני ברית)';
+        document.getElementById('first_name').required = isSpouse;
         loadEligibleList(memberType);
         toggleBrideField();
     }
 
-    // ניהול שדה שם נעורים ועיצוב כפתורי הרדיו של המין
     function toggleBrideField() {
         const isSpouse = document.querySelector('input[name="member_type"]:checked').value === 'spouse';
-        const genderRadio = document.querySelector('input[name="gender"]:checked');
-        const isFemale = genderRadio && genderRadio.value === 'נ';
-        const isMale = genderRadio && genderRadio.value === 'ז';
-        const brideField = document.getElementById('bride_field_container');
-        const maidenInput = document.getElementById('maiden_name');
-
-        document.getElementById('genderMLabel').classList.toggle('active', isMale);
+        const isFemale = document.querySelector('input[name="gender"]:checked')?.value === 'נ';
+        document.getElementById('genderMLabel').classList.toggle('active', document.querySelector('input[name="gender"]:checked')?.value === 'ז');
         document.getElementById('genderFLabel').classList.toggle('active', isFemale);
-
-        if (isSpouse && isFemale) {
-            brideField.classList.remove('hidden');
-            maidenInput.required = true;
-        } else {
-            brideField.classList.add('hidden');
-            maidenInput.required = false;
-        }
+        document.getElementById('bride_field_container').classList.toggle('hidden', !(isSpouse && isFemale));
+        document.getElementById('maiden_name').required = isSpouse && isFemale;
     }
 
-    // הרצה מבודדת של שתי הפונקציות בעליית המסך
     window.onload = () => {
         loadEligibleList('newborn');
         loadMissingNameBabies();
+        loadActionLogs(); // טעינת הלוגים בהתחלה
     };
 
-    // --- שליחת טופס 1: הוספת חבר משפחה ---
     document.getElementById('familyForm').onsubmit = async (e) => {
         e.preventDefault();
-        
         const btn = document.getElementById('submitBtn');
         const status = document.getElementById('statusMessage');
+        btn.disabled = true; btn.innerText = 'שומר...';
         
-        btn.disabled = true;
-        btn.innerText = 'שומר נתונים...';
-        status.innerText = '';
-
-        const genderRadio = document.querySelector('input[name="gender"]:checked');
-        const selectedGender = genderRadio ? genderRadio.value : null;
-        const memberType = document.querySelector('input[name="member_type"]:checked').value;
-
         const payload = {
-            member_type: memberType,
+            member_type: document.querySelector('input[name="member_type"]:checked').value,
             first_name: document.getElementById('first_name').value.trim(),
             last_name: document.getElementById('last_name').value.trim(),
             full_name: document.getElementById('full_name').value.trim() || null,
-            gender: selectedGender,
+            gender: document.querySelector('input[name="gender"]:checked')?.value,
             hebrew_date: document.getElementById('hebrew_date').value.trim() || null,
-            son_of: parentSelect.value, // שליחת ה-ID שנבחר
+            son_of: parentSelect.value,
             mothers_name: document.getElementById('mothers_name').value.trim() || null,
             maiden_name: document.getElementById('maiden_name').value.trim() || null
         };
 
         try {
-            const response = await fetch('/api/add-member', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                status.style.color = '#4ed17d';
-                status.innerText = result.message || 'הנתונים נשמרו בהצלחה!';
-                
+            const r = await fetch('/api/add-member', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const res = await r.json();
+            if (r.ok) {
+                status.style.color = '#4ed17d'; status.innerText = res.message;
                 document.getElementById('familyForm').reset();
-                document.getElementById('genderMLabel').classList.remove('active');
-                document.getElementById('genderFLabel').classList.remove('active');
-                parentSelect.value = ""; 
                 toggleFormFields();
-                
                 loadMissingNameBabies();
-            } else {
-                status.style.color = '#ff6b6b';
-                status.innerText = result.error || 'חלה שגיאה בשמירה מצד השרת';
-            }
-        } catch (err) {
-            status.style.color = '#ff6b6b';
-            status.innerText = 'שגיאת תקשורת: השרת לא הגיב לבקשת השמירה';
-        } finally {
-            btn.disabled = false;
-            btn.innerText = 'שמור ב-Neon';
-        }
-    };
-
-    // --- שליחת טופס 2: עדכון שם לתינוק ---
-    document.getElementById('updateBabyForm').onsubmit = async (e) => {
-        e.preventDefault();
-        
-        const btn = document.getElementById('updateBtn');
-        const messageDiv = document.getElementById('updateMessage');
-        
-        btn.disabled = true;
-        btn.innerText = 'מעדכן שם...';
-        messageDiv.innerText = '';
-
-        const payload = {
-            id: babySelect.value,
-            first_name: document.getElementById('new_first_name').value.trim(),
-            full_name: document.getElementById('new_full_name').value.trim() || null
-        };
-
-        try {
-            const response = await fetch('/api/update-baby-name', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                messageDiv.style.color = '#4ed17d';
-                messageDiv.innerText = result.message || 'השם עודכן בהצלחה!';
-                document.getElementById('updateBabyForm').reset();
-                
-                loadMissingNameBabies();
-                const currentType = document.querySelector('input[name="member_type"]:checked').value;
-                loadEligibleList(currentType);
-            } else {
-                messageDiv.style.color = '#ff6b6b';
-                messageDiv.innerText = result.error || 'השרת סירב לעדכן את השם';
-            }
-        } catch (error) {
-            messageDiv.style.color = '#ff6b6b';
-            messageDiv.innerText = 'שגיאת תקשורת: לא ניתן היה לעדכן את השם בשרת';
-        } finally {
-            btn.disabled = false;
-            btn.innerText = 'עדכן שם במערכת';
-        }
+                loadActionLogs(); // רענון הלוגים מיידית אחרי שמירה!
+            } else { status.style.color = '#ff6b6b'; status.innerText = res.error; }
+        } catch (err) { status.style.color = '#ff6b6b'; status.innerText = 'שגיאת שרת'; }
+        finally { btn.disabled = false; btn.innerText = 'שמור ב-Neon'; }
     };
 </script>
-
 </body>
 </html>
