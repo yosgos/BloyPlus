@@ -14,7 +14,7 @@
             align-items: center;
             padding: 40px 20px;
             box-sizing: border-box;
-            overflow-y: auto; /* מאפשר דפדוף וגלילה בצורה טבעית */
+            overflow-y: auto; /* מאפשר דפדוף וגלילה מלאה על כל המסך */
         }
         
         .page-title {
@@ -38,7 +38,7 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             color: white;
             box-sizing: border-box;
-            margin-bottom: 40px; /* מרווח בין הטפסים לאפשרות דפדוף נוחה */
+            margin-bottom: 40px; /* מרווח קבוע בין הטפסים ליצירת עמוד ארוך */
         }
         
         h2 { text-align: center; margin-top: 0; margin-bottom: 20px; font-weight: 400; color: #4ed17d; }
@@ -94,11 +94,6 @@
         .radio-option.active {
             border-color: #4ed17d;
             background: rgba(78, 209, 125, 0.15);
-        }
-        
-        .radio-option.active-blue {
-            border-color: #4e9ad1;
-            background: rgba(78, 154, 209, 0.15);
         }
 
         .hidden { display: none !important; }
@@ -215,38 +210,44 @@
     const parentSelect = document.getElementById('son_of');
     const babySelect = document.getElementById('babySelect');
 
-    // פונקציה לטעינת רשימת הורים/בני זוג - שומרת ID ב-Value!
+    // 1. פונקציה חסינה לטעינת רשימת הורים/בני זוג המבוססת על מזהה ID ייחודי
     async function loadEligibleList(type) {
         parentSelect.innerHTML = '<option value="" disabled selected>טוען רשימה מהשרת...</option>';
         try {
             const response = await fetch(`/api/get-eligible-parents?type=${type}`);
-            if (!response.ok) throw new Error('נכשלה טעינת הרשימה');
-            const data = await response.json(); 
+            if (!response.ok) throw new Error(`קוד שגיאה מהשרת: ${response.status}`);
             
+            const data = await response.json(); 
             const defaultText = type === 'spouse' ? 'בחר בן/בת זוג מהרשימה...' : 'בחר הורה מהרשימה...';
             parentSelect.innerHTML = `<option value="" disabled selected>${defaultText}</option>`;
             
+            if (!data || data.length === 0) {
+                parentSelect.innerHTML = '<option value="" disabled>לא נמצאו רשומות תואמות</option>';
+                return;
+            }
+
             data.forEach(person => {
                 const option = document.createElement('option');
-                option.value = person.id; // 🌟 שומר את ה-ID הייחודי מאחורי הקלעים!
-                option.textContent = person.name; // מציג את השם הקריא למשתמש
+                option.value = person.id; // שמירת ה-ID הייחודי
+                option.textContent = person.name; // הצגת השם למשתמש
                 parentSelect.appendChild(option);
             });
         } catch (err) {
-            console.error(err);
-            parentSelect.innerHTML = '<option value="" disabled selected>שגיאה בטעינת הרשימה</option>';
+            console.error("שגיאה בטעינת רשימת הורים:", err);
+            parentSelect.innerHTML = '<option value="" disabled selected>שגיאה בטעינת הרשימה מהשרת</option>';
         }
     }
 
-    // פונקציה לשליפת התינוקות חסרי השם לטופס השני
+    // 2. פונקציה חסינה לשליפת תינוקות ללא שם (מונעת קריסה של כל הדף)
     async function loadMissingNameBabies() {
         babySelect.innerHTML = '<option value="" disabled selected>טוען רשימה מהשרת...</option>';
         try {
             const response = await fetch('/api/update-baby-name');
-            if (!response.ok) throw new Error('שגיאה בטעינת תינוקות');
+            if (!response.ok) throw new Error(`קוד שגיאה מהשרת: ${response.status}`);
+            
             const babies = await response.json();
 
-            if (babies.length === 0) {
+            if (!babies || babies.length === 0) {
                 babySelect.innerHTML = '<option value="" disabled>אין תינוקות חסרי שם כרגע</option>';
                 return;
             }
@@ -254,17 +255,17 @@
             babySelect.innerHTML = '<option value="" disabled selected>-- בחר תינוק/ת מהרשימה --</option>';
             babies.forEach(baby => {
                 const option = document.createElement('option');
-                option.value = baby.id; // שומר ID
-                option.textContent = baby.display_label; // מציג "הבן של... (תאריך)"
+                option.value = baby.id;
+                option.textContent = baby.display_label;
                 babySelect.appendChild(option);
             });
         } catch (error) {
-            console.error(error);
-            babySelect.innerHTML = '<option value="" disabled>שגיאה בטעינת הנתונים</option>';
+            console.error("שגיאה בטעינת רשימת תינוקות:", error);
+            babySelect.innerHTML = '<option value="" disabled>טופס עדכון תינוקות לא זמין כרגע</option>';
         }
     }
 
-    // ניהול החלפת שדות וחובת מילוי לפי סוג המצטרף
+    // ניהול שדות דינמי וחובת מילוי לפי סוג מצטרף
     function toggleFormFields() {
         const memberType = document.querySelector('input[name="member_type"]:checked').value;
         const isSpouse = memberType === 'spouse';
@@ -281,7 +282,6 @@
             motherField.classList.remove('hidden');
             document.getElementById('mothers_name').required = true;
             
-            // לחתן/כלה - השם הוא חובה!
             firstNameLabel.innerText = 'שם פרטי *';
             firstNameInput.required = true;
         } else {
@@ -289,7 +289,6 @@
             motherField.classList.add('hidden');
             document.getElementById('mothers_name').required = false;
             
-            // לתינוק חדש - השם הוא אופציונלי (לפני ברית)
             firstNameLabel.innerText = 'שם פרטי (אופציונלי לתינוק לפני ברית)';
             firstNameInput.required = false;
         }
@@ -298,7 +297,7 @@
         toggleBrideField();
     }
 
-    // ניהול תצוגת שדה כלה (שם נעורים) ועיצוב כפתורי מין
+    // ניהול שדה שם נעורים ועיצוב כפתורי הרדיו של המין
     function toggleBrideField() {
         const isSpouse = document.querySelector('input[name="member_type"]:checked').value === 'spouse';
         const genderRadio = document.querySelector('input[name="gender"]:checked');
@@ -319,7 +318,7 @@
         }
     }
 
-    // טעינה ראשונית של שני הטפסים בדף הארוך
+    // הרצה מבודדת של שתי הפונקציות בעליית המסך
     window.onload = () => {
         loadEligibleList('newborn');
         loadMissingNameBabies();
@@ -347,7 +346,7 @@
             full_name: document.getElementById('full_name').value.trim() || null,
             gender: selectedGender,
             hebrew_date: document.getElementById('hebrew_date').value.trim() || null,
-            son_of: parentSelect.value, // כאן יישלח ה-ID המדויק שנבחר!
+            son_of: parentSelect.value, // שליחת ה-ID שנבחר
             mothers_name: document.getElementById('mothers_name').value.trim() || null,
             maiden_name: document.getElementById('maiden_name').value.trim() || null
         };
@@ -371,15 +370,14 @@
                 parentSelect.value = ""; 
                 toggleFormFields();
                 
-                // רענון רשימת התינוקות בטופס התחתון למקרה שהתווסף תינוק בלי שם
                 loadMissingNameBabies();
             } else {
                 status.style.color = '#ff6b6b';
-                status.innerText = result.error || 'חלה שגיאה בשמירה';
+                status.innerText = result.error || 'חלה שגיאה בשמירה מצד השרת';
             }
         } catch (err) {
             status.style.color = '#ff6b6b';
-            status.innerText = 'שגיאת תקשורת עם השרת';
+            status.innerText = 'שגיאת תקשורת: השרת לא הגיב לבקשת השמירה';
         } finally {
             btn.disabled = false;
             btn.innerText = 'שמור ב-Neon';
@@ -417,17 +415,16 @@
                 messageDiv.innerText = result.message || 'השם עודכן בהצלחה!';
                 document.getElementById('updateBabyForm').reset();
                 
-                // רענון שני הטפסים במקביל
                 loadMissingNameBabies();
                 const currentType = document.querySelector('input[name="member_type"]:checked').value;
                 loadEligibleList(currentType);
             } else {
                 messageDiv.style.color = '#ff6b6b';
-                messageDiv.innerText = result.error || 'חלה שגיאה בעדכון השם';
+                messageDiv.innerText = result.error || 'השרת סירב לעדכן את השם';
             }
         } catch (error) {
             messageDiv.style.color = '#ff6b6b';
-            messageDiv.innerText = 'שגיאת תקשורת עם השרת';
+            messageDiv.innerText = 'שגיאת תקשורת: לא ניתן היה לעדכן את השם בשרת';
         } finally {
             btn.disabled = false;
             btn.innerText = 'עדכן שם במערכת';
