@@ -70,7 +70,7 @@
         .log-title { font-weight: bold; color: #ffb703; font-size: 14px; margin-bottom: 4px; }
         .log-details { font-size: 12px; color: #aaa; font-family: monospace; direction: ltr; text-align: right; margin-top: 6px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 4px;}
         .btn-undo {
-            background: #ff6b6b; color: white; border: none; padding: 6px 12px; font-size: 12px;
+            background: #ff6b6b; color: white; border: none; padding: 8px 12px; font-size: 13px;
             border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px; width: 100%; transition: 0.2s;
         }
         .btn-undo:hover { background: #e05353; }
@@ -79,6 +79,11 @@
 <body>
 
 <h1 class="page-title">מערכת ניהול ועדכון חברי המשפחה</h1>
+
+<div class="form-box" style="max-width: 550px; border-color: rgba(255, 183, 3, 0.3);">
+    <h3 style="color: #ffb703;">🔄 ביטול פעולות והיסטוריית עדכונים</h3>
+    <div id="logsContainer">טוען היסטוריית פעולות...</div>
+</div>
 
 <div class="form-box">
     <h2>הוספת חבר משפחה</h2>
@@ -147,11 +152,6 @@
     <div id="updateMessage" class="status-msg"></div>
 </div>
 
-<div class="form-box" style="max-width: 550px;">
-    <h3>היסטוריית פעולות אחרונות וביטול שינויים</h3>
-    <div id="logsContainer">טוען היסטוריית פעולות...</div>
-</div>
-
 <script>
     const parentSelect = document.getElementById('son_of');
     const babySelect = document.getElementById('babySelect');
@@ -185,7 +185,7 @@
         } catch (e) { babySelect.innerHTML = '<option value="" disabled>שגיאה בטעינה</option>'; }
     }
 
-    // 🌟 שליפת הלוגים והצגתם על המסך עם פירוט פקודות ה-SQL
+    // שליפת הלוגים והצגתם על המסך עם פירוט פקודות ה-SQL
     async function loadActionLogs() {
         logsContainer.innerHTML = 'טוען פקודות אחרונות...';
         try {
@@ -218,9 +218,9 @@
         } catch (e) { logsContainer.innerHTML = 'שגיאה בטעינת היסטוריית השינויים'; }
     }
 
-    // 🌟 ביצוע ה-Rollback בפועל בלחיצת כפתור
+    // ביצוע ה-Rollback בפועל בלחיצת כפתור
     async function executeRollback(logId) {
-        if (!confirm("האם אתה בטוח שברצונך לבטל פעולה זו לחלוטיิน ולמחוק את כל הרשומות שהיא יצרה מ-Neon?")) return;
+        if (!confirm("האם אתה בטוח שברצונך לבטל פעולה זו לחלוטין ולמחוק את כל הרשומות שהיא יצרה מ-Neon?")) return;
         try {
             const response = await fetch('/api/rollback-action', {
                 method: 'POST',
