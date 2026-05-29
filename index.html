@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>הוספת חבר משפחה</title>
+    <title>ניהול חברי משפחה וענפים</title>
     <style>
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
@@ -10,29 +10,44 @@
             min-height: 100vh;
             margin: 0;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 40px 20px;
             box-sizing: border-box;
+            overflow-y: auto; /* מאפשר דפדוף וגלילה בצורה טבעית */
         }
+        
+        .page-title {
+            color: white;
+            font-weight: 300;
+            font-size: 2.2rem;
+            margin-bottom: 30px;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
         .form-box {
             background: rgba(255, 255, 255, 0.06);
             backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 30px;
             border-radius: 16px;
             width: 100%;
-            max-width: 400px;
+            max-width: 460px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             color: white;
             box-sizing: border-box;
+            margin-bottom: 40px; /* מרווח בין הטפסים לאפשרות דפדוף נוחה */
         }
-        h2 { text-align: center; margin-bottom: 20px; font-weight: 400; }
+        
+        h2 { text-align: center; margin-top: 0; margin-bottom: 20px; font-weight: 400; color: #4ed17d; }
+        h3 { margin-top: 0; margin-bottom: 20px; font-weight: 400; text-align: center; color: #4e9ad1; }
         label { font-size: 14px; color: #ccc; display: block; margin-top: 14px; }
         
         input, select {
             width: 100%;
-            padding: 10px;
+            padding: 11px;
             margin: 6px 0 4px 0;
             border-radius: 6px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -42,11 +57,12 @@
             font-size: 15px;
             transition: 0.2s;
         }
+        
         select option {
             background: #203a43;
             color: white;
         }
-        input:focus, select:focus { outline: none; border-color: #4ed17d; }
+        input:focus, select:focus { outline: none; border-color: #4ed17d; background: rgba(255, 255, 255, 0.15); }
         
         .type-container, .gender-container {
             display: flex;
@@ -79,27 +95,38 @@
             border-color: #4ed17d;
             background: rgba(78, 209, 125, 0.15);
         }
+        
+        .radio-option.active-blue {
+            border-color: #4e9ad1;
+            background: rgba(78, 154, 209, 0.15);
+        }
 
         .hidden { display: none !important; }
 
         button[type="submit"] {
             width: 100%;
             padding: 12px;
-            background: #4ed17d;
             border: none;
             border-radius: 6px;
-            color: #0f2027;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
             margin-top: 24px;
+            font-size: 16px;
         }
-        button[type="submit"]:hover { background: #3db86b; transform: translateY(-1px); }
-        button[type="submit"]:disabled { background: #555; cursor: not-allowed; color: #aaa; }
-        #statusMessage { text-align: center; margin-top: 15px; font-size: 14px; }
+        
+        .btn-green { background: #4ed17d; color: #0f2027; }
+        .btn-green:hover { background: #3db86b; transform: translateY(-1px); }
+        .btn-blue { background: #4e9ad1; color: white; }
+        .btn-blue:hover { background: #357cae; transform: translateY(-1px); }
+        
+        button[type="submit"]:disabled { background: #555 !important; cursor: not-allowed; color: #aaa !important; transform: none !important; }
+        .status-msg { text-align: center; margin-top: 15px; font-size: 14px; font-weight: 500; }
     </style>
 </head>
 <body>
+
+<h1 class="page-title">מערכת ניהול ועדכון חברי המשפחה</h1>
 
 <div class="form-box">
     <h2>הוספת חבר משפחה</h2>
@@ -117,37 +144,37 @@
     </div>
 
     <form id="familyForm">
-        <label>שם פרטי *</label>
-        <input type="text" id="first_name" required autocomplete="off">
+        <label id="first_name_label">שם פרטי</label>
+        <input type="text" id="first_name" autocomplete="off">
 
         <label>שם משפחה *</label>
         <input type="text" id="last_name" required autocomplete="off">
 
-        <label>שם מלא</label>
+        <label>שם מלא (לקודש)</label>
         <input type="text" id="full_name" autocomplete="off" placeholder="אופציונלי...">
 
-        <label>מין</label>
+        <label>מין *</label>
         <div class="gender-container">
             <label class="radio-option" id="genderMLabel">
-                <input type="radio" name="gender" value="ז" onchange="toggleBrideField()">
+                <input type="radio" name="gender" value="ז" required onchange="toggleBrideField()">
                 <span>זכר</span>
             </label>
             <label class="radio-option" id="genderFLabel">
-                <input type="radio" name="gender" value="נ" onchange="toggleBrideField()">
+                <input type="radio" name="gender" value="נ" required onchange="toggleBrideField()">
                 <span>נקבה</span>
             </label>
         </div>
 
         <div id="bride_field_container" class="hidden">
-            <label>שם נעורים (לכלות בלבד)</label>
+            <label>שם נעורים (לכלות בלבד) *</label>
             <input type="text" id="maiden_name" autocomplete="off">
         </div>
 
         <label>תאריך לידה עברי</label>
-        <input type="text" id="hebrew_date" placeholder="אופציונלי..." autocomplete="off">
+        <input type="text" id="hebrew_date" placeholder="למשל: ט חשון תשסד" autocomplete="off">
 
         <div id="mother_field_container" class="hidden">
-            <label>שם אם המצטרף (עבור שם לתפילה)</label>
+            <label>שם אם המצטרף (עבור שם לתפילה) *</label>
             <input type="text" id="mothers_name" autocomplete="off">
         </div>
 
@@ -156,15 +183,39 @@
             <option value="" disabled selected>טוען רשימה...</option>
         </select>
 
-        <button type="submit" id="submitBtn">שמור ב-Neon</button>
+        <button type="submit" id="submitBtn" class="btn-green">שמור ב-Neon</button>
     </form>
-    <div id="statusMessage"></div>
+    <div id="statusMessage" class="status-msg"></div>
 </div>
+
+
+<div class="form-box">
+    <h3>עדכון שם לתינוק / תינוקת</h3>
+    <p style="font-size: 13px; color: #bbb; text-align: center; margin-top: -10px; margin-bottom: 20px;">לאחר נתינת השם בברית המילה או בזבד הבת</p>
+    
+    <form id="updateBabyForm">
+        <label for="babySelect">בחר תינוק/ת לעדכון *</label>
+        <select id="babySelect" required>
+            <option value="" disabled selected>טוען רשימת תינוקות חסרי שם...</option>
+        </select>
+
+        <label for="new_first_name">שם פרטי רשמי נקבע *</label>
+        <input type="text" id="new_first_name" required autocomplete="off" placeholder="למשל: יוסף יצחק">
+
+        <label for="new_full_name">שם מלא לקודש (אופציונלי - אם שונה מהשם הפרטי)</label>
+        <input type="text" id="new_full_name" autocomplete="off" placeholder="השם המלא לתפילה...">
+
+        <button type="submit" id="updateBtn" class="btn-blue">עדכן שם במערכת</button>
+    </form>
+    <div id="updateMessage" class="status-msg"></div>
+</div>
+
 
 <script>
     const parentSelect = document.getElementById('son_of');
+    const babySelect = document.getElementById('babySelect');
 
-    // פונקציה לטעינת רשימה מהשרת לפי סוג הטופס (newborn / spouse)
+    // פונקציה לטעינת רשימת הורים/בני זוג - שומרת ID ב-Value!
     async function loadEligibleList(type) {
         parentSelect.innerHTML = '<option value="" disabled selected>טוען רשימה מהשרת...</option>';
         try {
@@ -177,8 +228,8 @@
             
             data.forEach(person => {
                 const option = document.createElement('option');
-                option.value = person.name;
-                option.textContent = person.name;
+                option.value = person.id; // 🌟 שומר את ה-ID הייחודי מאחורי הקלעים!
+                option.textContent = person.name; // מציג את השם הקריא למשתמש
                 parentSelect.appendChild(option);
             });
         } catch (err) {
@@ -187,12 +238,40 @@
         }
     }
 
-    // ניהול החלפת שדות לפי סוג המצטרף
+    // פונקציה לשליפת התינוקות חסרי השם לטופס השני
+    async function loadMissingNameBabies() {
+        babySelect.innerHTML = '<option value="" disabled selected>טוען רשימה מהשרת...</option>';
+        try {
+            const response = await fetch('/api/update-baby-name');
+            if (!response.ok) throw new Error('שגיאה בטעינת תינוקות');
+            const babies = await response.json();
+
+            if (babies.length === 0) {
+                babySelect.innerHTML = '<option value="" disabled>אין תינוקות חסרי שם כרגע</option>';
+                return;
+            }
+
+            babySelect.innerHTML = '<option value="" disabled selected>-- בחר תינוק/ת מהרשימה --</option>';
+            babies.forEach(baby => {
+                const option = document.createElement('option');
+                option.value = baby.id; // שומר ID
+                option.textContent = baby.display_label; // מציג "הבן של... (תאריך)"
+                babySelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error(error);
+            babySelect.innerHTML = '<option value="" disabled>שגיאה בטעינת הנתונים</option>';
+        }
+    }
+
+    // ניהול החלפת שדות וחובת מילוי לפי סוג המצטרף
     function toggleFormFields() {
         const memberType = document.querySelector('input[name="member_type"]:checked').value;
         const isSpouse = memberType === 'spouse';
         const label = document.getElementById('select_label');
         const motherField = document.getElementById('mother_field_container');
+        const firstNameInput = document.getElementById('first_name');
+        const firstNameLabel = document.getElementById('first_name_label');
         
         document.getElementById('typeNewbornLabel').classList.toggle('active', !isSpouse);
         document.getElementById('typeSpouseLabel').classList.toggle('active', isSpouse);
@@ -200,12 +279,21 @@
         if (isSpouse) {
             label.innerText = 'נשוי/נשואה ל... *';
             motherField.classList.remove('hidden');
+            document.getElementById('mothers_name').required = true;
+            
+            // לחתן/כלה - השם הוא חובה!
+            firstNameLabel.innerText = 'שם פרטי *';
+            firstNameInput.required = true;
         } else {
             label.innerText = 'שם ההורה (בן/בת של) *';
             motherField.classList.add('hidden');
+            document.getElementById('mothers_name').required = false;
+            
+            // לתינוק חדש - השם הוא אופציונלי (לפני ברית)
+            firstNameLabel.innerText = 'שם פרטי (אופציונלי לתינוק לפני ברית)';
+            firstNameInput.required = false;
         }
         
-        // טעינת הרשימה המתאימה בזמן אמת
         loadEligibleList(memberType);
         toggleBrideField();
     }
@@ -217,22 +305,27 @@
         const isFemale = genderRadio && genderRadio.value === 'נ';
         const isMale = genderRadio && genderRadio.value === 'ז';
         const brideField = document.getElementById('bride_field_container');
+        const maidenInput = document.getElementById('maiden_name');
 
         document.getElementById('genderMLabel').classList.toggle('active', isMale);
         document.getElementById('genderFLabel').classList.toggle('active', isFemale);
 
         if (isSpouse && isFemale) {
             brideField.classList.remove('hidden');
+            maidenInput.required = true;
         } else {
             brideField.classList.add('hidden');
+            maidenInput.required = false;
         }
     }
 
-    // טעינה ראשונית - תינוקות
+    // טעינה ראשונית של שני הטפסים בדף הארוך
     window.onload = () => {
         loadEligibleList('newborn');
+        loadMissingNameBabies();
     };
 
+    // --- שליחת טופס 1: הוספת חבר משפחה ---
     document.getElementById('familyForm').onsubmit = async (e) => {
         e.preventDefault();
         
@@ -254,7 +347,7 @@
             full_name: document.getElementById('full_name').value.trim() || null,
             gender: selectedGender,
             hebrew_date: document.getElementById('hebrew_date').value.trim() || null,
-            son_of: parentSelect.value, 
+            son_of: parentSelect.value, // כאן יישלח ה-ID המדויק שנבחר!
             mothers_name: document.getElementById('mothers_name').value.trim() || null,
             maiden_name: document.getElementById('maiden_name').value.trim() || null
         };
@@ -270,13 +363,16 @@
 
             if (response.ok) {
                 status.style.color = '#4ed17d';
-                status.innerText = result.message || 'החבר נשמר בהצלחה!';
+                status.innerText = result.message || 'הנתונים נשמרו בהצלחה!';
                 
                 document.getElementById('familyForm').reset();
                 document.getElementById('genderMLabel').classList.remove('active');
                 document.getElementById('genderFLabel').classList.remove('active');
                 parentSelect.value = ""; 
                 toggleFormFields();
+                
+                // רענון רשימת התינוקות בטופס התחתון למקרה שהתווסף תינוק בלי שם
+                loadMissingNameBabies();
             } else {
                 status.style.color = '#ff6b6b';
                 status.innerText = result.error || 'חלה שגיאה בשמירה';
@@ -287,6 +383,54 @@
         } finally {
             btn.disabled = false;
             btn.innerText = 'שמור ב-Neon';
+        }
+    };
+
+    // --- שליחת טופס 2: עדכון שם לתינוק ---
+    document.getElementById('updateBabyForm').onsubmit = async (e) => {
+        e.preventDefault();
+        
+        const btn = document.getElementById('updateBtn');
+        const messageDiv = document.getElementById('updateMessage');
+        
+        btn.disabled = true;
+        btn.innerText = 'מעדכן שם...';
+        messageDiv.innerText = '';
+
+        const payload = {
+            id: babySelect.value,
+            first_name: document.getElementById('new_first_name').value.trim(),
+            full_name: document.getElementById('new_full_name').value.trim() || null
+        };
+
+        try {
+            const response = await fetch('/api/update-baby-name', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                messageDiv.style.color = '#4ed17d';
+                messageDiv.innerText = result.message || 'השם עודכן בהצלחה!';
+                document.getElementById('updateBabyForm').reset();
+                
+                // רענון שני הטפסים במקביל
+                loadMissingNameBabies();
+                const currentType = document.querySelector('input[name="member_type"]:checked').value;
+                loadEligibleList(currentType);
+            } else {
+                messageDiv.style.color = '#ff6b6b';
+                messageDiv.innerText = result.error || 'חלה שגיאה בעדכון השם';
+            }
+        } catch (error) {
+            messageDiv.style.color = '#ff6b6b';
+            messageDiv.innerText = 'שגיאת תקשורת עם השרת';
+        } finally {
+            btn.disabled = false;
+            btn.innerText = 'עדכן שם במערכת';
         }
     };
 </script>
