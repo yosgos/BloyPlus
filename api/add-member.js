@@ -100,7 +100,7 @@ export default async function handler(req, res) {
     let branchAddress = null;
 
     const branchRes = await client.query(
-      `SELECT name_branch, address FROM "Branches" WHERE "Family_id" = $1 LIMIT 1`,
+      `SELECT name_branch, address FROM "branches" WHERE "Family_id" = $1 LIMIT 1`,
       [familyId]
     );
 
