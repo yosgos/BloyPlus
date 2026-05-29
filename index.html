@@ -18,7 +18,7 @@
         }
         .page-title { color: white; font-weight: 300; font-size: 2.2rem; margin-bottom: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; }
         
-        /* 🌟 עיצוב תפריט הניווט החדש */
+        /* עיצוב תפריט הניווט החדש */
         .nav-menu {
             display: flex;
             gap: 10px;
@@ -210,23 +210,19 @@
     const babySelect = document.getElementById('babySelect');
     const logsContainer = document.getElementById('logsContainer');
 
-    // 🌟 פונקציית הניווט בין הטאבים השונים
+    // פונקציית הניווט בין הטאבים
     function switchTab(tabName) {
-        // הסתרת כל הסקשנים
         document.getElementById('section-add').classList.add('hidden');
         document.getElementById('section-update').classList.add('hidden');
         document.getElementById('section-history').classList.add('hidden');
         
-        // הסרת קלאס אקטיבי מכל הכפתורים
         document.getElementById('btn-add').classList.remove('active');
         document.getElementById('btn-update').classList.remove('active');
         document.getElementById('btn-history').classList.remove('active');
 
-        // הצגת הסקשן הנבחר והפיכת הכפתור שלו לאקטיבי
         document.getElementById(`section-${tabName}`).classList.remove('hidden');
         document.getElementById(`btn-${tabName}`).classList.add('active');
 
-        // טעינת נתונים ספציפית בהתאם לטאב שנפתח לביצועים אופטימליים
         if (tabName === 'history') loadActionLogs();
         if (tabName === 'update') loadMissingNameBabies();
     }
@@ -271,17 +267,22 @@
                 const item = document.createElement('div');
                 item.className = 'log-item';
                 
-                let sqlDetails = `DELETE FROM family_members WHERE id = '${log.affected_ids.inserted_member_id}';`;
-                if (log.affected_ids.updated_bio_id) {
-                    sqlDetails += `\nUPDATE family_members SET married_to = NULL WHERE id = '${log.affected_ids.updated_bio_id}';`;
-                }
-                if (log.affected_ids.inserted_branch_id) {
-                    sqlDetails += `\nDELETE FROM branches WHERE "Family_id" = '${log.affected_ids.inserted_branch_id}';`;
+                let sqlDetails = "";
+                if (log.action_type === 'update_baby_name') {
+                    sqlDetails = `UPDATE family_members SET first_name = '${log.affected_ids.previous_first_name || 'תינוק'}', full_name = ${log.affected_ids.previous_full_name ? `'${log.affected_ids.previous_full_name}'` : 'NULL'} WHERE id = '${log.affected_ids.updated_baby_id}';`;
+                } else {
+                    sqlDetails = `DELETE FROM family_members WHERE id = '${log.affected_ids.inserted_member_id}';`;
+                    if (log.affected_ids.updated_bio_id) {
+                        sqlDetails += `\nUPDATE family_members SET married_to = NULL WHERE id = '${log.affected_ids.updated_bio_id}';`;
+                    }
+                    if (log.affected_ids.inserted_branch_id) {
+                        sqlDetails += `\nDELETE FROM branches WHERE "Family_id" = '${log.affected_ids.inserted_branch_id}';`;
+                    }
                 }
 
                 item.innerHTML = `
                     <div class="log-title">${log.description}</div>
-                    <div style="font-size:11px; color:#66c2ff;">${new Date(log.created_at).toLocaleTimeString('he-IL')} - שינויי SQL שבוצעו:</div>
+                    <div style="font-size:11px; color:#66c2ff;">${new Date(log.created_at).toLocaleTimeString('he-IL')} - שינויי SQL לביצוע:</div>
                     <div class="log-details">${sqlDetails.replace(/\n/g, '<br>')}</div>
                     <button class="btn-undo" onclick="executeRollback(${log.id})">בטל פעולה זו ומחק מה-DB</button>
                 `;
@@ -291,7 +292,7 @@
     }
 
     async function executeRollback(logId) {
-        if (!confirm("האם אתה בטוח שברצונך לבטל פעולה זו לחלוטין ולמחוק את כל הרשומות שהיא יצרה מ-Neon?")) return;
+        if (!confirm("האם אתה בטוח שברצונך לבטל פעולה זו לחלוטין ולשחזר/למחוק את כל הרשומות מ-Neon?")) return;
         try {
             const response = await fetch('/api/rollback-action', {
                 method: 'POST',
@@ -302,8 +303,6 @@
             alert(res.message || 'הפעולה בוטלה');
             
             loadActionLogs();
-            loadMissingNameBabies();
-            toggleFormFields();
         } catch (e) { alert("שגיאה בתקשורת בביטול הפעולה"); }
     }
 
@@ -334,6 +333,7 @@
         loadEligibleList('newborn');
     };
 
+    // שליחת טופס 1 - הוספת חבר
     document.getElementById('familyForm').onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
@@ -362,6 +362,47 @@
             } else { status.style.color = '#ff6b6b'; status.innerText = res.error; }
         } catch (err) { status.style.color = '#ff6b6b'; status.innerText = 'שגיאת שרת'; }
         finally { btn.disabled = false; btn.innerText = 'שמור ב-Neon'; }
+    };
+
+    // שליחת טופס 2 - עדכון שם תינוק קיים
+    document.getElementById('updateBabyForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('updateBtn');
+        const status = document.getElementById('updateMessage');
+        
+        btn.disabled = true; btn.innerText = 'מעדכן...';
+        status.innerText = '';
+        
+        const payload = {
+            baby_id: babySelect.value,
+            new_first_name: document.getElementById('new_first_name').value.trim(),
+            new_full_name: document.getElementById('new_full_name').value.trim() || null
+        };
+
+        try {
+            const r = await fetch('/api/update-baby-name', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(payload) 
+            });
+            const res = await r.json();
+            
+            if (r.ok) {
+                status.style.color = '#4ed17d'; 
+                status.innerText = res.message;
+                document.getElementById('updateBabyForm').reset();
+                loadMissingNameBabies(); // רענון מהיר
+            } else { 
+                status.style.color = '#ff6b6b'; 
+                status.innerText = res.error || 'שגיאה בעדכון'; 
+            }
+        } catch (err) { 
+            status.style.color = '#ff6b6b'; 
+            status.innerText = 'שגיאת שרת'; 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerText = 'עדכן שם במערכת'; 
+        }
     };
 </script>
 </body>
