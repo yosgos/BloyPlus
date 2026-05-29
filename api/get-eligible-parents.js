@@ -10,26 +10,49 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // קבלת סוג הבקשה מה-URL (למשל: /api/get-eligible-parents?type=spouse)
+  const { type } = req.query;
+  const client = await pool.connect();
+
   try {
-    const client = await pool.connect();
-    
-    // שאילתה עם מיון מתוחכם לפי דורות ומקטעי ה-ID
-    const query = `
-      SELECT 
-          id, 
-          (first_name || ' ' || last_name) AS name 
-      FROM family_members 
-      WHERE married_to IS NOT NULL 
-        AND id LIKE '%0'
-        AND id NOT LIKE '00%'
-      ORDER BY 
-          -- 1. מיון לפי דור: קודם כל מי שהמקטע השני שלו הוא '00' (למעלה), ואז השאר
-          CASE WHEN split_part(id, '.', 2) = '00' THEN 1 ELSE 2 END ASC,
-          -- 2. מיון פנימי לפי חלקי ה-ID (כדי ש-01 יבוא לפני 02)
-          split_part(id, '.', 1) ASC,
-          split_part(id, '.', 2) ASC,
-          split_part(id, '.', 3) ASC
-    `;
+    let query = '';
+
+    // ==========================================================
+    // מצב 1: בקשה עבור טופס חתן/כלה (רק רווקים, מעל גיל 18, לפי גיל)
+    // ==========================================================
+    if (type === 'spouse') {
+      query = `
+        SELECT 
+            id, 
+            (first_name || ' ' || last_name) AS name 
+        FROM family_members 
+        WHERE married_to IS NULL 
+          AND date_birthday IS NOT NULL
+          AND date_birthday <= CURRENT_DATE - INTERVAL '18 years'
+        ORDER BY date_birthday ASC
+      `;
+    } 
+    // ==========================================================
+    // מצב 2: בקשה עבור טופס תינוק (הקוד המקורי והמתוחכם שלך!)
+    // ==========================================================
+    else {
+      query = `
+        SELECT 
+            id, 
+            (first_name || ' ' || last_name) AS name 
+        FROM family_members 
+        WHERE married_to IS NOT NULL 
+          AND id LIKE '%0'
+          AND id NOT LIKE '00%'
+        ORDER BY 
+            -- 1. מיון לפי דור: קודם כל מי שהמקטע השני שלו הוא '00' (למעלה), ואז השאר
+            CASE WHEN split_part(id, '.', 2) = '00' THEN 1 ELSE 2 END ASC,
+            -- 2. מיון פנימי לפי חלקי ה-ID (כדי ש-01 יבוא לפני 02)
+            split_part(id, '.', 1) ASC,
+            split_part(id, '.', 2) ASC,
+            split_part(id, '.', 3) ASC
+      `;
+    }
     
     const response = await client.query(query);
     client.release();
@@ -37,6 +60,7 @@ export default async function handler(req, res) {
     return res.status(200).json(response.rows);
 
   } catch (error) {
-    return res.status(500).json({ error: 'שגיאה בשליפת ההורים: ' + error.message });
+    if (client) client.release();
+    return res.status(500).json({ error: 'שגיאה בשליפת הרשימה: ' + error.message });
   }
 }
