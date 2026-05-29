@@ -48,7 +48,6 @@
         }
         input:focus, select:focus { outline: none; border-color: #4ed17d; }
         
-        /* סגנון כפתורי הרדיו החדשים לבחירת סוג מצטרף */
         .type-container, .gender-container {
             display: flex;
             gap: 15px;
@@ -165,7 +164,7 @@
 <script>
     const parentSelect = document.getElementById('son_of');
 
-    // פונקציה חכמה לטעינת רשימה מהשרת לפי סוג הטופס (newborn / spouse)
+    // פונקציה לטעינת רשימה מהשרת לפי סוג הטופס (newborn / spouse)
     async function loadEligibleList(type) {
         parentSelect.innerHTML = '<option value="" disabled selected>טוען רשימה מהשרת...</option>';
         try {
@@ -248,7 +247,6 @@
         const selectedGender = genderRadio ? genderRadio.value : null;
         const memberType = document.querySelector('input[name="member_type"]:checked').value;
 
-        // בניית ה-Payload בצורה בטוחה שתואמת למה שהשרת מצפה
         const payload = {
             member_type: memberType,
             first_name: document.getElementById('first_name').value.trim(),
@@ -256,7 +254,7 @@
             full_name: document.getElementById('full_name').value.trim() || null,
             gender: selectedGender,
             hebrew_date: document.getElementById('hebrew_date').value.trim() || null,
-            son_of: parentSelect.value, // נשאר son_of בשביל לא לשבור את ה-API
+            son_of: parentSelect.value, 
             mothers_name: document.getElementById('mothers_name').value.trim() || null,
             maiden_name: document.getElementById('maiden_name').value.trim() || null
         };
@@ -274,7 +272,6 @@
                 status.style.color = '#4ed17d';
                 status.innerText = result.message || 'החבר נשמר בהצלחה!';
                 
-                // איפוס נקי וחזרה למצב ברירת מחדל
                 document.getElementById('familyForm').reset();
                 document.getElementById('genderMLabel').classList.remove('active');
                 document.getElementById('genderFLabel').classList.remove('active');
