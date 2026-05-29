@@ -15,9 +15,14 @@ if (member_type === 'spouse') {
   const bioPerson = biologicalData.rows[0];
   const displayNameBio = `${bioPerson.first_name} ${bioPerson.last_name}`; 
   
+  // 🌟 תיקון: הגדרת שם המצטרף החדש עבור העדכון בטבלה
+  const displayNameNewMember = `${first_name} ${last_name}`;
+  
   const bioIdStr = bioPerson.id.toString();
   const newSpouseId = bioIdStr.slice(0, -1) + '1';
 
+  // הגדרת מילת קישור לפי מין המצטרף
+  const connectWord = gender === 'נ' ? 'בת' : 'בן';
   const nameForPrayer = full_name || first_name;
   const prayerName = mothers_name 
     ? `${nameForPrayer} ${connectWord} ${mothers_name}`
@@ -44,7 +49,7 @@ if (member_type === 'spouse') {
     gender === 'נ' ? maiden_name : null, mothers_name
   ]);
 
-  // פעולה 2: עדכון בן המשפחה הביולוגי לפי ה-ID שלו
+  // פעולה 2: עדכון בן המשפחה הביולוגי לפי ה-ID שלו (עכשיו displayNameNewMember מוגדר!)
   const updateBiologicalQuery = `
     UPDATE family_members 
     SET married_to = $1 
@@ -81,4 +86,4 @@ if (member_type === 'spouse') {
   const parent = parentData.rows[0];
   const parentIdStr = parent.id.toString();
   
-  // [שאר קוד חישוב ה-ID של הילד, יצירת ה-ID, השמות לתפילה וההכנסה נשארים בדיוק אותו דבר...]
+  // [שאר קוד חישוב ה-ID של הילד, יצירת ה-ID, השמות לתפילה וההכנסה...]
