@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // דרך בטוחה לחלוטין לחלץ את הפרמטר type מהכתובת, שלא תלויה בהגדרות השרת של Vercel
+  // חילוץ פרמטר ה-type מהכתובת בצורה בטוחה וחסינת תקלות
   const urlParts = req.url.split('?');
   const params = new URLSearchParams(urlParts[1] || '');
   const type = params.get('type');
@@ -21,10 +21,9 @@ export default async function handler(req, res) {
     let query = '';
 
     // ==========================================================
-    // מצב 1: בקשה עבור טופס חתן/כלה (רק רווקים)
+    // מצב 1: בקשה עבור טופס חתן/כלה (רווקים מעל גיל 18 לפי ה-DB החדש)
     // ==========================================================
     if (type === 'spouse') {
-      // שלב א': ננסה לשלוף לפי גיל 18. אם עדיין ריק, נוריד את הסינון של התאריך בהמשך.
       query = `
         SELECT 
             id, 
@@ -32,13 +31,13 @@ export default async function handler(req, res) {
         FROM family_members 
         WHERE married_to IS NULL 
           AND date_birthday IS NOT NULL
-          AND date_birthday <= CURRENT_DATE - INTERVAL '18 years'
+          AND date_birthday <= (CURRENT_DATE - INTERVAL '18 years')::date
         ORDER BY date_birthday ASC
       `;
       
       let response = await client.query(query);
       
-      // אם הרשימה חזרה ריקה (למשל כי עמודת date_birthday ריקה אצלך בנאון), נשלוף את כל הרווקים בלי מגבלת גיל
+      // הגנה: אם הרשימה חזרה ריקה, נשלוף את כל הרווקים ללא סינון גיל
       if (response.rows.length === 0) {
         query = `
           SELECT 
